@@ -470,9 +470,9 @@ export class ErrorPageComponent implements OnInit {
 <p>{{errorMessage}}</p>
 ```
 
-## Uso de resolución de datos a través la ruta con Resolver
+## Uso de resolución de datos a través la ruta con Resolver (Envío de datos al componente a cargar a través de ruta)
 
-Usar un Resolver no es más que usar un método que se va a ejecutar anter del renderizado, y que nos puede servir para pasar de forma dinámica datos al componente a cargar.
+Usar un Resolver no es más que usar un método que se va a ejecutar antes del renderizado, y que nos puede servir para pasar de forma dinámica datos al componente a cargar.
 
 Primero, vamos a crear un `servicio resolver`
 ```typescript
