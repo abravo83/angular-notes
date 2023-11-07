@@ -120,4 +120,4 @@ this.userService.actualizarComponente.subscribe(
 ```
 
 
-El segundo, el `Subject` es de `RxJS` y funciona de forma similar, pero en vez de utilizar `.emit()` usaremos `.next(valor)` y es una manera *¿más recomendada?* de ser usado en vez de `EventEmmiter`
+El segundo, el `Subject` es de `RxJS` y funciona de forma similar, pero en vez de utilizar `.emit()` usaremos `.next(valor)` y es una manera *¿más recomendada?* de ser usado en vez de `EventEmmiter`, salvo en el caso de que lo estemos usando para emitir un evento a la plantilla HTML a través de 
