@@ -40,7 +40,7 @@ Es una de las dos opciones principales que tenemos para crear formulario usando 
 Esta segunda opción nos da más control sobre el formulario, pero resulta un poco más compleja de configurar.
 
 
-## ¿Cómo es un Formulario TD?
+## ¿Cómo es un Formulario TD? ¿Cómo usarlo?
 
 Para poder utilizarlo primero debemos importar el módulo `FormsModule` desde `'@angular/forms'` a nuestro `app.module.ts`
 
