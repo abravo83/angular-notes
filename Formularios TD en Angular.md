@@ -62,7 +62,7 @@ export class AppModule { }
 Una vez que tenemos este módulo importado, `FormsModule` creará para nosotros un objeto formulario cuando detecte la etiqueta `<form>` en nuestra plantilla.
 
 Sin embargo, somos nosotros los que debemos indicar la situación de los `inputs` que queremos agregar a ese objeto formulario.
-Lo vamos a hacer agregando a nuestra etiqueta `input` la directiva `ngModel`
+Lo vamos a hacer agregando a nuestra etiqueta `input` la directiva `ngModel` manteniendo las propiedades `name="nombreDeVariable"` que serán las que identifiquen las propiedades de los valores de nuestro *objeto formulario*
 
 ```html
 <form>
@@ -76,4 +76,61 @@ Lo vamos a hacer agregando a nuestra etiqueta `input` la directiva `ngModel`
   <button type="submit">Enviar<button>
 </form>
 ```
+
+Para poder enviar y utilizar los datos necesitamos crear un método para usarlo al enviarlo.
+
+```typescript
+  onSubmit(){
+  }
+```
+
+El mejor lugar para usar el método en la plantilla NO es un botón de tipo `submit` porque este botón va a hacer que se dispare el evento de Javascript `submit`.
+
+Hay una directiva que usa Angular para escuchar este evento, que se coloca en la etiqueta de apertura `<form>` llamada `(onSubmit)`:
+
+```html
+<form (ngSubmit)="onSubmit()">
+  <label>Nombre<label>
+  <input 
+    type="text" 
+    id="nombre-usuario" 
+    name="nombre" 
+    ngModel
+  />
+  <button type="submit">Enviar<button>
+</form>
+```
+ 
+ Para pasarle los valores se puede usar una referencia local, que vamos a enlazar con la directiva "ngForm" del elemento `<form>` y vamos a pasársela como argumento a nuestro método:
+```html
+<form (ngSUbmit)="onSubmit(aform)" #aform="ngForm">
+```
+
+```typescript
+onSubmit(form: NgForm){
+  console.log(form.form.value);
+}
+```
+
+<hr>
+
+También podríamos haber accedido a la referencia local usando `@ViewChild`:
+
+```html
+<form (ngSUbmit)="onSubmit()" #aform="ngForm">
+```
+
+```typescript
+@ViewChild('aform') aform!: Ngform;  //La ! es porque no le vamos a dar un valor inicial, para que Typescript ignore ese error.
+
+onSubmit(){
+  console.log(this.aform.form.value);
+}
+```
+
+*Fíjate que ahora `onSubmit()` no tiene argumentos, estoy usando directamente la referencia local sin pasarla al método como argumento*
+
+**Esta forma de acceder a los datos del formulario nos puede ser muy útil para, por ejemplo, tener habilitado o deshabilitado el botón Enviar, validaciones en tiempo real, etc.**
+
+<hr>
 
