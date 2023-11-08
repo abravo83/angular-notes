@@ -134,3 +134,44 @@ onSubmit(){
 
 <hr>
 
+## Formas de validar nuestro Formulario TD
+
+
+Podemos añadir directivas de validación a nuestro HTML, que aunque sean nativas de HTML, Angular va a usar:
+
+* required
+* email
+* ...
+
+```html
+<form (ngSubmit)="onSubmit()">
+  <label>Nombre<label>
+  <input 
+    type="text" 
+    id="nombre-usuario" 
+    name="nombre" 
+    ngModel
+    required
+  />
+  <input 
+    type="email" 
+    id="email-usuario" 
+    name="email" 
+    ngModel
+    required
+    email
+  />
+  <button type="submit">Enviar<button>
+</form>
+```
+
+Estas directivas harán que nuestro elemento `NgForm` devuelva en su atributo `valid=false` si no se cumplen las validaciones nativas que le hemos agregado, como estar vacíos, o no cumplir el formato de email.
+
+Angular, además, va a renderizar el HTML agregándole clases según el estado de validación. Si observamos con el inspector el elemento input podremos ver clases como:
+
+```html
+<input class="... ng-dirty ng-touched ng-valid"
+```
+
+Que nos pueden permitir adaptar estilos cuando un input "tiene contenido", ha sido "tocado", o "es válido" según las directivas de control que le hayamos agregado. 
+
