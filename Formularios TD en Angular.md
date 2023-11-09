@@ -175,3 +175,160 @@ Angular, además, va a renderizar el HTML agregándole clases según el estado d
 
 Que nos pueden permitir adaptar estilos cuando un input "tiene contenido", ha sido "tocado", o "es válido" según las directivas de control que le hayamos agregado. 
 
+## Ejemplos de uso de la validación
+
+Podemos aprovechar las validaciones para evaluar si el formulario está listo para ser enviado o no usando la propiedad `disabled` enlazada con la cualidad `valid` del formulario
+
+```html
+<form (ngSubmit)="onSubmit()" #aform="NgForm">
+  <label>Nombre<label>
+  <input 
+    type="text" 
+    id="nombre-usuario" 
+    name="nombre" 
+    ngModel
+    required
+  />
+  <input 
+    type="email" 
+    id="email-usuario" 
+    name="email" 
+    ngModel
+    required
+    email
+  />
+  <button type="submit" [disabled]="!aform.valid">Enviar<button>
+</form>
+```
+
+También podemos usar las clases que Angular genera para nosotros (`ng-dirty`, `ng-invalid`, etc)
+
+```css
+input.ng-invalid.ng-touched {
+  border: 1px solid red;
+}
+```
+
+
+O incluso hacer que se muestren mensajes de error cuando no se han agregado los datos en formato correcto.
+
+```html
+<form (ngSubmit)="onSubmit()" #aform="NgForm">
+  <label>Nombre<label>
+  <input 
+    type="text" 
+    id="nombre-usuario" 
+    name="nombre" 
+    ngModel
+    required
+  />
+  <input 
+    type="email" 
+    id="email-usuario" 
+    name="email" 
+    ngModel
+    required
+    email
+    #aemail="ngModel"
+  />
+  <p *ngIf="!aemail.valid && aemail.touched">Por favor introduce un email correcto</p>
+  <button type="submit" [disabled]="!aform.valid">Enviar<button>
+</form>
+```
+
+
+## Fijar valores por defecto en el formulario
+
+Si en vez de utilizar `ngModel` como una directiva más lo usamos con un `property binding` y le damos un valor estaremos definiendo el valor por defecto que queremos mostrar en nuestro campo del input o del `<select>`
+
+```html
+
+<form (ngSubmit)="onSubmit()" #aform="NgForm">
+  <label>Nombre<label>
+  <input 
+    type="text" 
+    id="nombre-usuario" 
+    name="nombre" 
+    [ngModel]="Tu nombre aquí"
+    required
+  />
+  <label>Email</label>
+  <input 
+    type="email" 
+    id="email-usuario" 
+    name="email" 
+    [ngModel]="tucorreo@elquesea.com"
+    required
+    email
+    #aemail="ngModel"
+  />
+  <label>Elige una pregunta secreta</label>
+  <select
+    id="secret"
+    [ngModel]="pet"
+    name="secret"
+    >
+    <option value="mascota">¿Cuál era el nombre de tu primera mascota?</option>
+    <option value="coche">¿Cuál era la marca de tu primer coche?</option>
+  </select>
+  <p *ngIf="!aemail.valid && aemail.touched">Por favor introduce un email correcto</p>
+  <button type="submit" [disabled]="!aform.valid">Enviar<button>
+</form>
+
+```
+
+## Uso de `two way binding`
+
+Por supuesto podemos usar también `two way binding` (`([ngModel])`) para mostrar la variable de forma interpolada en la plantilla, aunque entonces deberemos también definir la propiedad en nuestra clase del componente.
+
+
+## Agrupación de controles del formulario en un `Form Group`
+
+Podemos agrupar una serie de controles para poder hacer una validación general de todo el grupo, por ejemplo, o por mantener todos los valores agrupados. Para eso podemos usar la directiva `ngModelGroup="stringDefinidaPorMi"` en un elemento padre de los subelementos donde se encuentran los `<inputs>` que queremos agrupar
+
+```html
+
+<form (ngSubmit)="onSubmit()" #aform="NgForm">
+  <div id="datos-usuario" ngModelGroup="datosUsuario">
+   <label>Nombre<label>
+    <input type="text" id="nombre-usuario" name="nombre" [ngModel]="Tu nombre aquí" required
+  />
+    <label>Email</label>
+    <input type="email" id="email-usuario" name="email" [ngModel]="tucorreo@elquesea.com" required email #aemail="ngModel"/>
+  </div>
+  <label>Elige una pregunta secreta</label>
+  <select id="secret"[ngModel]="pet"name="secret">
+    <option value="mascota">¿Cuál era el nombre de tu primera mascota?</option>
+    <option value="coche">¿Cuál era la marca de tu primer coche?</option>
+  </select>
+  <p *ngIf="!aemail.valid && aemail.touched">Por favor introduce un email correcto</p>
+  <button type="submit" [disabled]="!aform.valid">Enviar<button>
+</form>
+
+```
+
+Esto hará que los datos en nuestro objeto formulario se encuentren ahora en diferentes propiedades agrupados bajo el nombre `datosUsuario`
+
+```javascript
+NgForm = {
+  ...
+  controls: {
+    ...
+    datosUsuario: {
+      ...
+      dirty: true,
+      valid: true,
+      
+    }
+  }
+  ...
+  value: {
+    ...
+    ...
+    datosUsuario: {
+      nombre: "...",
+      email: "..."
+    }
+  }
+}
+```
