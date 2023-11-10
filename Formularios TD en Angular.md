@@ -332,3 +332,111 @@ NgForm = {
   }
 }
 ```
+
+## Usando los valores del Formulario TD
+
+
+### Modificando los valores del formulario
+
+Podemos usar los datos de distintas formas. O bien, usamos los datos haciendo uso de los enlaces de doble vía ( `two ways data-binding` ) con el ya conocido `([ngModel])` o podemos usar la referencia local que hemos creado anteriormente en nuestra etiqueta `<form>` y usarla ( a través de `@ViewChild()`) .
+
+```html
+<form (ngSubmit)="onSubmit()" #aform="NgForm">
+  <div id="datos-usuario" ngModelGroup="datosUsuario">
+  </div>
+  <button (click)="proponerNombre()">Sugerir datos</button>
+...
+
+...
+</form>
+```
+
+```typescript
+export class AppComponent{
+ @ViewChild('aform') formulario: NgForm;
+  ...
+  proponerNombre(){
+    const nombreSugerido: 'MrRoot';
+    this.formulario.setValue({
+      datosUsuario: {
+        nombre: nombreSugerido,
+        email: '',
+        secret: 'coche',
+      }
+    })
+  }
+}
+```
+
+En el ejemplo hemos usado la referencia para modificar los datos del formulario al hacer click en el botón `Sugerir Datos` que ejecuta el método `proponerNombre()`
+
+Este método hará que se eliminen los datos previos del formulario. El mejor caso de uso puede ser quizás un botón para resetear el formulario.
+
+SI queremos modificar exclusivamente un único valor hay que modificar el método  proponer nombre. En él debemos acceder al subelemento `form` dentro de `formulario` y esta vez usar el método `.patchValue()`:
+
+```typescript
+ proponerNombre(){
+    const nombreSugerido: 'MrRoot';
+    this.formulario.form.patchValue({
+      datosUsuario: {
+        nombre: nombreSugerido,
+      }
+    })
+  }
+```
+
+Así podremos modificar exclusivamente un único valor del formulario, en vez de al usar `setValue({})` que necesita definir todos los controles del formulario.
+
+### Presentando los valores del formulario en la plantilla.
+
+Para presentar los valores vamos a definir primero en la clase de nuestro componente un objeto que pueda contener estos datos, una variable booleana que contenga el estado del envío del formulario (es decir, si se ha hecho `click` o no en el botón), y por último en el método que se va a ejecutar al hacer `click` en el botón Enviar, vamos a hacer que ese método asigne los valores a nuestra propiedad objeto.
+
+```typescript
+export class AppComponent{
+
+  usuario = {
+    nombre: '',
+    email: '',
+    secret: ''
+  }
+  enviado: boolean = false;
+  
+  onSubmit(){
+	this.enviado = true;
+    this.usuario.nombre = this.formulario.value.datosUsuario.nombre;
+    this.usuario.email = this.formulario.value.datosUsuario.email;
+    this.usuario.secret = this.formulario.value.datosUsuario.secret;
+  }
+}
+
+```
+
+Podemos presentar esto valores a continuación de nuestro formulario en este mismo componente así:
+
+```html
+<form (ngSubmit)="onSubmit()" #aform="NgForm">
+...
+</form>
+<div *ngIf="enviado">
+  <p>Tu nombre es: {{usuario.nombre}}</p>
+  <p>Tu email es: {{usuario.email}}</p>
+  <p>Tu pregunta secreta es: {{usuario.secret}}</p>
+</div
+
+```
+
+Anteriormente hemos dicho que podemos modificar todos los valores del formulario de una sola vez usando `this.referencialocal.setValue({objetoConLasMismasPropiedadesQueElValueDeNuestroFormulario})` y que un posible uso podría ser el de resetear el formulario, pero la verdad es que tenemos disponible un método mucho mas sencillo: `this.referencialocalformulario.reset()` y que además resetea las clases que Angular va agregando para guardar los estados del formulario.
+
+Vamos a agregar este método para que se ejecute cuando hacemos click en enviar:
+
+```typescript
+onSubmit(){
+	this.enviado = true;
+    this.usuario.nombre = this.formulario.value.datosUsuario.nombre;
+    this.usuario.email = this.formulario.value.datosUsuario.email;
+    this.usuario.secret = this.formulario.value.datosUsuario.secret;
+    this.formulario.reset();  //MUY IMPORTANTE, esperar a volcar los datos en la variable local antes de resetear el formulario ;)
+  }
+```
+
+Podríamos usar de forma parecida `reset(`) a como usamos anteriormente `setValue()`, pasándole valores específicos a los que resetearse y funcionaría exactamente igual que `setValue()`, salvo por lo que quitar las clases agregadas de `ng-touched`, etc.
