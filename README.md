@@ -10,11 +10,11 @@ El orden correcto de estudio de los temas es:
 4. Directivas Angular
 5. Servicios de Angular
 6. Routing en Angular
+7. Observables en Angular
+8. Formularios en Angular: Template Driven
 
 //TODO:
 
-7. Observables en Angular
-8. Formularios en Angular: Template Driven
 9. Formularios en Angular: Reactive Forms
 10. Pipes en Angular
 11. Peticiones HTTP en Angular
