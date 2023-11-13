@@ -243,3 +243,119 @@ get aficiones(){
 }
 ```
 
+## Creando Funciones Validadoras Propias
+
+Ya hemos visto donde se incluyen las validaciones ya construidas, pero, por lo que sea, las validaciones disponibles no son suficientes y necesitamos una validación propia.
+
+Para conseguir esto vamos a tener que incluir una función en nuestra clase que nos sirva para la validación e incluirla en el array de validaciones de la función de construcción del `FormGroup`.
+
+```typescript
+
+nombresProhibidos = ['Pili', 'Maki'];
+
+ngOnInit(): void {
+  this.registroFormGroup = new FormGroup({
+	'userData' = new FormGroup({
+	  'username': new FormControl(null, [Validators.required, this.nombresProhibidos.bind(this)] ),
+	  // Como accedemos a esta función desde la plantilla, debemos referenciarla para que sepa a que 'this' nos referimos (¿?)
+      'email': new FormControl(null, [Validators.required, Validators.email]),
+	}),  
+    'tipoUsuario': new FormControl('usuario', Validators.required),
+    'aficiones': new FormArray
+  })
+}
+
+
+nombresProhibidos(control: FormControl): {[s: string]: boolean} {
+  // Cuando pasamos la validación la respuesta es NULL, cuando no la pasamos la respuesta es {'unstring': true};
+  
+  if (this.nombresProhibidos.indexOf(control.value)){
+    return {'nombreProhibido': true};
+  }
+  return null;
+}
+```
+
+Podemos añadir un mensaje propio a este error de validación en la plantilla
+
+```html
+<div>
+	<label>Usuario</label>
+	<input type="text" [formControl]="username" />
+	<span
+	  *ngIf="registroFormGroup.get('userData.username').errors['required']"
+	  >	
+	   Por favor, introduce un nombre de usuario
+	 </span>
+	 <span *ngIf="registroFormGroup.get('userData.username').errors['nombreProhibido']">Este nombre de usuario no está permitido</span>
+</div>
+```
+
+## Creando un validador asíncrono
+
+Cuando tenemos que hacer la validación tras hacer una consulta http o cualquier otro proceso asíncrono (Que tiene una respuesta posterior y la web sigue su proceso normal bloquearse mientras espera la respuesta), entonces necesitamos una validación asíncrona.
+
+```typescript
+import { Observable } from 'rxjs/Observable';
+...
+
+ngOnInit(): void {
+  this.registroFormGroup = new FormGroup({
+	'userData' = new FormGroup({
+	  'username': new FormControl(null, [Validators.required, this.nombresProhibidos.bind(this)] ),
+	  // Como accedemos a esta función desde la plantilla, debemos referenciarla para que sepa a que 'this' nos referimos (¿?)
+      'email': new FormControl(null, [Validators.required, Validators.email, this.emailsProhibidosAsincronos.bind(this)]),  //En realidad aquí no es necesario porque la función no usa this.
+	}),  
+    'tipoUsuario': new FormControl('usuario', Validators.required),
+    'aficiones': new FormArray
+  })
+}
+
+emailsProhibidosAsincronos(control: FormControl): Promise<any> | Observable<any> {
+  const promise = new Promise((resolve, reject)=>{
+    setTimeout(()=>{
+      if (control.value === 'test@test.com'){
+        resolve({'emailProhibido': true})
+      } else {
+      resolve null
+      }
+    } ,1500);
+    
+	return promise;
+  })
+}
+
+```
+
+Si inspeccionamos el campo del input en las herramientas de desarrollador, veremos que durante los 1500ms se añade la clase `ng-pendig` y posteriormente `ng-valid` o `ng-invalid` según el email que hayamos introducido.
+
+Así podremos realizar una validación asíncrona.
+
+## Reaccionando a cambios de estado o cambios de valor 
+
+Nos podemos subscribir a los cambios de estado o de valor de un campo, ya que nuestro `FormGroup` principal tiene dos `Observables` a los que nos podemos subscribir para ejecutar algún código cuando se produzca el evento de cambio:
+
+```typescript
+ngOnInit(): void {
+  this.registroFormGroup = new FormGroup({
+	'userData' = new FormGroup({
+	  'username': new FormControl(null, [Validators.required, this.nombresProhibidos.bind(this)] ),
+	 
+      'email': new FormControl(null, [Validators.required, Validators.email, this.emailsProhibidosAsincronos.bind(this)]), 
+	}),  
+    'tipoUsuario': new FormControl('usuario', Validators.required),
+    'aficiones': new FormArray
+  });
+
+  //Subscripciones a cambios de estado y de valor.
+  this.registroFormGroup.valueChanges.subscribe((value)=>{
+    console.log(value);
+  });
+  
+  this.registroFormGroup.statusChanges.subscribe((satus)=>{
+    console.log(status);
+  });
+  
+}
+```
+
