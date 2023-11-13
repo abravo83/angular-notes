@@ -103,4 +103,143 @@ onSubmit(){
 ## Agregando validaciones a nuestro formulario.
 
 
+En los formularios reactivos podemos especificar la función de validación. Esto lo hacemos directamente en la inicialización del grupo de control, donde utilizamos el segundo argumento del constructor  del `FormControl`. Para usar los `Validators` necesitamos importarlos de `'@angular/forms'`;
+
+```typescript
+import { FormGroup, FormControl, Validators} from '@angular/forms';
+...
+
+ngOnInit(): void {
+  this.registroFormGroup = new FormGroup({
+    'username': new FormControl(null, Validators.required),
+    'email': new FormControl(null, [Validators.required, Validators.email]),
+    'tipoUsuario': new FormControl('usuario', Validators.required)
+  })
+}
+```
+
+Podemos usar una única función `Validators` o varias usando un array de funciones. En el argumento usamos sólo la referencia a la función, pero no la ejecutamos, por eso las funciones de validación no llevan el `()` detrás.
+
+## Accediendo a los valores de los controles.
+
+Si por ejemplo queremos mostrar un mensaje debajo de alguno de nuestros inputs cuando no pasan la validación y tenemos que usar el valor resultado le la validación no seguimos el mismo procedimiento que seguíamos con un formulario TD, sino que usamos un método de nuestro grupo de control: `get('nombreDelControl')` y a partir de ese método ya podemos acceder al resultado de la validación
+
+```html
+<form [formGroup]="registroFormGroup" (ngSubmit)="onSubmit()">
+  <div>
+    <label>Usuario</label>
+    <input type="text" [formControl]="username" />
+    <span *ngIf="!registroFormGroup.get('username').valid && registroFormGroup.get('username').touched">Por favor, introduce un nombre de usuario</span>
+    
+  </div>
+  <div>
+    <label>Email</label>
+    <input type="text" [formControl]="email" />
+    <span *ngIf="!registroFormGroup.get('email').valid && registroFormGroup.get('email').touched">Por favor, introduce un email correcto</span>
+  </div>
+  <div *ngFor="let tipo of tipos">
+    <label>
+      <input type="radio" [formControl]="tipoUsuario"/>
+    </label>
+  </div>
+  <button type="Submit">Enviar</button>
+</form>
+```
+
+Otra forma de acceder a los valores de los controles, además del `get()` es usando una ruta. Esto es especialmente útil cuando hemos agrupado los valores en un GroupData
+
+## Agrupando los controles y accediendo a ellos
+
+Podemos agrupar algunos controles dentro de un nuevo `FormGroup` anidado, al que llamaremos `userData` 
+
+```typescript
+
+import { FormGroup, FormControl, Validators} from '@angular/forms';
+...
+
+ngOnInit(): void {
+  this.registroFormGroup = new FormGroup({
+	'userData' = new FormGroup({
+	  'username': new FormControl(null, Validators.required),
+      'email': new FormControl(null, [Validators.required, Validators.email]),
+	}),  
+    'tipoUsuario': new FormControl('usuario', Validators.required)
+  })
+}
+```
+
+Ahora, fíjate en que hemos agrupado un par de `inputs` dentro de un nuevo `<div>` al que le hemos asignado otro `FormGroup` llamado `userData`. Ahora los valores de esos campos están anidados, y para poder acceder a sus datos el HTML la forma va a cambiar de `registroFormGroup.get('username')` a `registroFormGroup.userData.get('username')`
+
+```html
+<form [formGroup]="registroFormGroup" (ngSubmit)="onSubmit()">
+  <div [formGroupName]="userData">
+	  <div>
+	    <label>Usuario</label>
+	    <input type="text" [formControl]="username" />
+	    <span
+	      *ngIf="!registroFormGroup.userData.get('username').valid && 
+	             registroFormGroup.userData.get('username').touched"
+             >	
+		 Por favor, introduce un nombre de usuario
+		 </span>
+	  </div>
+	  <div>
+	    <label>Email</label>
+	    <input type="text" [formControl]="email" />
+	    <span *ngIf="!registroFormGroup.userData.get('email').valid && 
+				    registroFormGroup.userData.get('email').touched"
+				    >
+			Por favor, introduce un email correcto
+			</span>
+	  </div>
+  </div>
+  <div *ngFor="let tipo of tipos">
+    <label>
+      <input type="radio" [formControl]="tipoUsuario"/>
+    </label>
+  </div>
+  <button type="Submit">Enviar</button>
+</form>
+```
+
+## Usando agrupación en Array
+
+Supongamos que queremos crear en nuestro formulario un apartado donde el usuario va a poder agregar diferentes controles, como que el usuario diga sus aficiones y un botón para agregar nuevos campos para cada afición.
+
+```html
+<div formArrayName="aficiones">
+  <label>Tus aficiones</label>
+  <button type="button" (click)="onAgregarAficion()">Agregar una afición</button>
+  <div *ngFor="let aficion of aficiones; let i = index;">
+    <input type="text" [formControlName]="i"/>
+  </div>
+</div>
+```
+
+
+```typescript
+import { FormArray, FormGroup, FormControl } from '@angular/forms';
+
+...
+
+ngOnInit(): void {
+  this.registroFormGroup = new FormGroup({
+	'userData' = new FormGroup({
+	  'username': new FormControl(null, Validators.required),
+      'email': new FormControl(null, [Validators.required, Validators.email]),
+	}),  
+    'tipoUsuario': new FormControl('usuario', Validators.required),
+    'aficiones': new FormArray
+  })
+}
+
+onAgregarAficion(){
+  const control = new FormControl(null, Validators.required);
+  (<FormArray>this.registroFormGroup.get('aficiones')).push(control)
+}
+
+get aficiones(){
+  return (this.registroFormGroup.get('aficiones') as FormArray).aficiones;
+}
+```
 
