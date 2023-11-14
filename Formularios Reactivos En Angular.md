@@ -359,3 +359,34 @@ ngOnInit(): void {
 }
 ```
 
+También podemos modificar los datos de forma procedimental usando el método .`setValue()`
+
+```typescript
+
+this.registroFormGroup.setValue({
+  'userData': {
+    'username': 'Pepito',
+    'email': 'pontu@email.aqui'
+  },
+  'tipoUsuario': 'usuario'
+})
+```
+
+Lo cual hará que al ejecutarse se rellenen estos datos en el formulario. 
+Pero si sólo queremos modificar una parte del formulario, entonces usaremos el método `.patchValue()`
+
+```typescript
+this.registroFormGroup.patchValue({
+  'userData': {
+    'email': 'pontu@email.aqui'
+  },
+})
+```
+
+Y, como ocurría con los formularios TD, también tenemos disponible un método para resetear el formulario: `.reset`
+
+```typescript
+this.registroFormGroup.reset();
+```
+
+Al `reset()` también se le puede pasar un objeto como los de `patchValue()` para fijar un valor de algún campo, como por ejemplo el valor del botón radio. Así tendría esa doble función: Quitar los valores y restituir el formulario a su estado sin tocar y al mismo tiempo nos puede servir para fijar algún valor.
