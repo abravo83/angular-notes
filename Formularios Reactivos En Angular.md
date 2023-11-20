@@ -29,7 +29,7 @@ export class AppComponent {
 }
 ```
 
-Con estos elementos: Una importación de `ReactiveFormsModule`, y un `FormGroup`ya estaríamos listos para poder crear nuestro primer formulario reactivo.
+Con estos elementos: Una importación de **`ReactiveFormsModule`** en nuestro `AppModule`, y un `FormGroup` ya estaríamos listos para poder crear nuestro primer formulario reactivo.
 
 Vamos ahora a definir nuestro `FormGroup` que hemos llamado `registroFromGroup`, y lo vamos a hacer en el ciclo de vida `OnInit`:
 
@@ -317,7 +317,7 @@ emailsProhibidosAsincronos(control: FormControl): Promise<any> | Observable<any>
       if (control.value === 'test@test.com'){
         resolve({'emailProhibido': true})
       } else {
-      resolve null
+      resolve(null)
       }
     } ,1500);
     
