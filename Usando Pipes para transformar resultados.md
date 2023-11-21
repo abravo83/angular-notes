@@ -84,3 +84,80 @@ Y ya lo tendríamos disponible en nuestro componente
 ```html
 <li>{{server.name | shorten}}</li>
 ```
+
+
+## Parametrizando un Pipe personalizado
+
+Para parametrizar un Pipe personalizado debemos agregar a nuestra función `transform` argumentos que van a ser nuestros parámetros
+
+```typescript
+import { Pipe, PipeTransform} from '@angular/core'
+
+@Pipe({
+  name: 'shorten'
+})
+export class ShortenPipe implements PipeTransform {
+
+  transform(value: any, limit: number){
+    if (value.lenght > limit) {
+      return value.substring(0, limit) + '...'
+    }
+    return value;
+  }
+
+}
+
+```
+
+```html
+  <p>{{server.name | shorten:5}}</p>  // Nos devuelva 5 caracteres y '...', p.e. 'Produ...'
+```
+
+## Uso de Pipes como buscadores
+
+Si ponemos un input de tipo text y enlazamos con `NgModel` su contenido a una propiedad de la clase del componente prodemos usar dicho input como una especie de buscador
+
+```html
+<input type="text" [ngModel]="textofiltrado">
+```
+
+```typescript
+//En el componente
+textofiltrado: string = '';
+```
+
+```typescript
+// Mi Pipe personalizado
+import { Pipe, PipeTransform} from '@angular/core'
+
+@Pipe({
+  name: 'filter'
+})
+export class FilterPipe implements PipeTransform {
+
+  transform(value: any, filterString: string){
+    if (value.length === 0) {
+      return value;
+    }
+
+    let arrayResultado = [];
+    
+	for (const item of value){
+	  if (item.name === filterString){
+	    arrayResultado.push(item);
+	  }
+	}
+
+    return arrayResultado;
+  }
+
+}
+```
+
+Ahora vamos a utilizar el Pipe en nuestro `*ngFor` para que nos filtre los resultados que contienen ese `string`
+
+```html
+<li *ngFor="let server of server | filter:textoFiltrado">
+  {{server.name}}
+</li>
+```
