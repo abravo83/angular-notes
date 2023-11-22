@@ -143,7 +143,7 @@ export class FilterPipe implements PipeTransform {
     let arrayResultado = [];
     
 	for (const item of value){
-	  if (item.name === filterString){
+	  if (item.name.indexOf(filterString) !== -1 || filterString === ''){
 	    arrayResultado.push(item);
 	  }
 	}
@@ -161,3 +161,35 @@ Ahora vamos a utilizar el Pipe en nuestro `*ngFor` para que nos filtre los resul
   {{server.name}}
 </li>
 ```
+
+
+## Pipes puros e impuros
+
+Un Pipe `puro` es un filtro que no se recalcula cuando se modifican los datos. Los `Pipes` nativos de Angular son todos `puros` ya que un `Pipe` impuro tiene un alto coste en el rendimiento de la aplicación.
+
+Aún así, nosotros podemos tener nuestros propios `Pipes` impuros. Para esto debemos usar un `Pipe` personalizado y agregar en el decorador la propiedad `pure: false`
+
+```typescript
+import { Pipe, PipeTransform} from '@angular/core'
+
+@Pipe({
+  name: 'filter',
+  pure: false
+})
+```
+
+Estos `Pipes` se recalculan cada vez que se modifican los datos que se están filtrando.
+
+## Entendiendo Pipes Asíncronos
+
+Hay un `Pipe` que realiza una función algo diferente a la de los demás `Pipes`. Nos permite mostrar datos asíncronos tales como una petición `http`.
+
+Si en nuestro HTML tenemos una propiedad que aún no ha recibido los datos de una petición, se nos van a mostrar como un `[Object object]` de una promesa sin resolver, a pesar de que el dato que esperamos sea `string`.
+
+Podemos usar un `Pipe` llamado **`async`** para que filtre el resultado sólo cuando se resuelva esa promesa:
+
+```html
+<h2>{{serverName | async}}</h2>
+```
+
+De esta forma no se mostrará el resultado `[Object object]` antes de recibir el dato de la promesa.
