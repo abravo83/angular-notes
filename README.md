@@ -12,15 +12,15 @@ El orden correcto de estudio de los temas es:
 6. Routing en Angular
 7. Observables en Angular
 8. Formularios en Angular: Template Driven
-
-//TODO:
-
 9. Formularios en Angular: Reactive Forms
 10. Pipes en Angular
 11. Peticiones HTTP en Angular
-12. Autenticación y protección de rutas en Angular
-13. Componentes dinámicos en Angular
-14. Signals en Angular
-15. Angular Universal (SSR)
-16. Unit testing en Angular
-17. ...
+    
+//TODO:
+
+13. Autenticación y protección de rutas en Angular
+14. Componentes dinámicos en Angular
+15. Signals en Angular
+16. Angular Universal (SSR)
+17. Unit testing en Angular
+18. ...
