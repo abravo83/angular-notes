@@ -38,4 +38,74 @@ Una vez tengamos el enlace de nuestro `backend` lo copiamos para nuestro proyect
 https://angular-course-db3f3-default-rtdb.europe-west1.firebasedatabase.app/
 ```
 
+También vamos a tener que crear los `endpoints` en nuestra API en Firebase
+```
+https://angular-course-db3f3-default-rtdb.europe-west1.firebasedatabase.app/posts.json //.json es un requisito de Firebase (supongo que para especificar que tipo de datos recibe)
+```
 
+
+## Configurar Angular para realizar peticiones HTTP
+
+Para poder realizar peticiones HTTP a través de Angular necesitamos usar un módulo nativo llamado `HttpClientModule`, para lo cual vamos a importarlo en nuestro `AppModule`:
+
+```typescript
+...
+import { HttpClientModule } from '@angular/common/http';
+...
+
+@NgModule({
+  declarations: [AppComponent],
+  imports: [BrowserModule, HttpClientModule],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+export class AppModule {}
+```
+
+Una vez hemos hecho esto ya tendremos disponible para inyectar en nuestro componente el módulo
+
+```typescript
+...
+import { HttpClient } from '@angular/common/http'
+...
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
+})
+export class AppComponent implements OnInit {
+
+  constructor(private http: HttpClient){}
+}
+
+```
+
+Ahora, a través de nuestra propiedad privada `http` del componente tenemos a disposición los diferentes métodos que se corresponden con los verbos de las peticiones HTTP.
+
+## ¿Cómo se realizan peticiones?
+
+Para las diferentes peticiones HTTP usando `HttpCliente` tenemos disponibles los métodos `.get(), .delete(), .post(), etc...`
+
+Además, para que la petición se mande, debemos **subscribirnos** a la respuesta, que va a ser un `Observable`.
+
+```typescript
+export class AppComponent implements OnInit {
+
+  postsCargados = [];
+
+  constructor(private http: HttpClient){}
+
+  ngOnInit(){
+    this.http.get('https://rutaAl/endpoint')
+      .subscribe( datos => {
+        this.postCargados = datos;
+      }, error => {
+        console.log(error);
+      })
+  }
+}
+
+```
+
+
+## Usando un servicio para nuestras peticiones HTTP
