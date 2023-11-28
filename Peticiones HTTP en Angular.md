@@ -109,3 +109,71 @@ export class AppComponent implements OnInit {
 
 
 ## Usando un servicio para nuestras peticiones HTTP
+
+Es una buena práctica trasladar las peticiones http a nuestros servicios. La razón principal sería la de disponer de estas peticiones de forma centralizada para distintos componentes, pero, ya que algunas de nuestras peticiones que se usen en diferentes componentes se van a usar en servicios, por pura organización es mejor tener todas nuestras peticiones en servicios.
+
+```typescript
+//En mi servicio
+
+import { Injectable } from '@angular/core';
+import { Post } from './Modelos/post.model';
+import { map } from 'rxjs/operators';
+
+@Injectable({
+  providedIn: 'root'
+})
+
+export class PostsService {
+  
+  constructor (private http: HttpClient) {}
+
+  createAndStorePost(title: string, content: string){
+    const postData: Post = {title: title, content: content};
+    this.http.post<{name: string}>('https://my-url-to-api/posts.json', postData)
+      .subscribe(responseData => {
+        console.log(responseData);
+      })
+  }
+
+  fetchPosts() {
+    this.http.get('https://my-url-to-api/posts.json')
+      // Esto siguiente es porque FireStore no devuelve un array, sino un objeto con todos los datos
+	 // de nuestra  colección como propiedades de ese objeto
+	  .pipe(
+	    map(responseData => {
+	     const postsArray: Post[] = [];
+	     for (const key in responseData) {
+	       postsArray.push({...responseData[key], id: key})
+	     }
+	     return postsArray;
+	    })
+	  )
+	  .subscribe(responseData => {
+  	     
+		//Estrategia para guardar los datos y que estén disponibles en el componente		
+
+       })
+  }
+
+}
+```
+
+```typescript
+//En mi componente
+import { PostService } from './post.service'
+
+...
+
+export class ComponentePepito {
+
+  constructors(private postService: PostService){}
+
+  onCreatePost(postData: Post){
+    this.postsService.createAndStorePost(postData.title, postData.content);
+  }
+
+}
+
+
+
+```
