@@ -151,7 +151,7 @@ export class PostsService {
 	  .subscribe(responseData => {
   	     
 		//Estrategia para guardar los datos y que estén disponibles en el componente		
-
+		  return responseData;
        })
   }
 
@@ -169,7 +169,7 @@ export class ComponentePepito {
   constructors(private postService: PostService){}
 
   onCreatePost(postData: Post){
-    this.postsService.createAndStorePost(postData.title, postData.content);
+    this.postsService.createAndStorePost(postData.title, postData.content)
   }
 
 }
@@ -177,3 +177,49 @@ export class ComponentePepito {
 
 
 ```
+
+
+### Posibles estrategias para guardar las respuestas de peticiones en los servicios.
+
+##### Devolviendo los resultados
+
+Simplemente usando
+
+```typescript
+return this.http... //En el servicio
+
+
+// En el componente:
+onCreatePost(postData: Post){
+    this.postsService.createAndStorePost(postData.title, postData.content)
+      .subscribe((response) => {
+       this.variableLocal = response
+      })
+  }
+
+
+```
+##### Usando `Subjects`
+
+Esta estrategia nos permite que se actualicen los valores entre los diferentes componentes. Guardaríamos el resultado de la petición en el servicio como un `Subject` que al tener un cambio propagaría eventos que modificarían los valores en los diferentes componentes que a su vez estén suscritos a ese `Subject`
+
+## Manejo de errores en las peticiones
+
+En las peticiones, cuando nos subscribimos, el primer argumento es el dato de respuesta, mientras que un segundo argumento correspondería a un objeto error que podemos usar para gestionar los errores en nuestra aplicación.
+
+```typescript
+
+onCreatePost(postData: Post){
+  this.postsService.createAndStorePost(postData.title, postData.content)
+    .subscribe((response) => {
+      this.variableLocal = response
+    }, (error) => {
+      console.log(error.message);
+    }
+  )
+}
+
+```
+
+
+##### Usando `Subjects` para gestionar errores
