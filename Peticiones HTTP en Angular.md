@@ -223,3 +223,62 @@ onCreatePost(postData: Post){
 
 
 ##### Usando `Subjects` para gestionar errores
+
+La estrategia de utilizar **`Subjects`** (Ahora explico que son) para gestionar errores es indicada cuando NO estamos devolviendo la petición en el servicio. Entonces podemos guardar el resultado de nuestra petición en un `Subject`
+
+```typescript
+//Servicio
+
+
+@Injectable({ providedIn: 'root' })
+export class PostService {
+
+  error = new Subject<string>()
+
+  constructor(private http: HttpClient) {}
+
+
+  createAndStorePost(title: string, content: string) {
+    const postData: Post = {title: title, content: content};
+
+	this.http.post<{name: string}>('https://ng-url-to-backend/post.json', postData)
+	  .subscribe(response => {
+	    console.log(response);
+	  }).error(error => {
+	    this.error.next(error.message)
+	  })
+  }
+}
+
+```
+
+
+
+```typescript
+// COMPONENTE
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subject } from 'rxjs';
+import { Subscription } from 'rxjs';
+
+
+
+exports class ComponenteEjemplo implements OnInit, OnDestroy
+
+error: boolean = false;
+private errorSubscription!: Subscription;
+
+
+ngOnInit(){
+  this.errorSubscription = this.postService.error.subscribe(errorMessage => {
+     this.error = true;
+     console.log(erroMesssage);
+  })
+}
+
+
+ngOnDestroy(){
+
+this.errorSubscription.unsubscribe();
+
+} 
+```
