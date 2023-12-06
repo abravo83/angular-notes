@@ -282,3 +282,279 @@ this.errorSubscription.unsubscribe();
 
 } 
 ```
+
+
+### Uso del pipe `catchError` para gestionar un error.
+
+
+Cuando usamos `Observables` ya habíamos visto la posibilidad de usar operadores para transformar el resultado de la petición.
+Hay un operador de `Pipe` específico para errores, llamado `catchError` que nos permitiría interceptar un error y realizar las operaciones necesarias (p.e. escribir en un log) y después podemos devolver ese error usando el método `throwError` (Que no es un operador de pipe de '`rxjs/operators`', sino un método de '`rxjs`')
+
+
+```typescript
+import { Subject, throwError } from 'rxjs';
+import { map, catchError } from 'rxjs/operators'
+
+...
+...
+.pipe(
+  map((responseData)=>{
+    // Do something with data
+    return changedData
+  }),
+  catchError((errorResponse)=>{
+    //Do something with error data
+	// Throw error
+	return throwError(errorResponse)
+  })
+)
+```
+
+
+
+## Configuración de `Headers` en las peticiones
+
+Las `Headers` o *cabeceras* de las peticiones son una de las dos partes que contiene una petición HTTP: Cabeceras y cuerpo (`Header` y `Body`). En el cuerpo encontramos los datos que estamos transmitiendo en nuestra petición (generalmente algún objeto JSON), mientras que todo lo demás se encuentra en la cabecera:
+
+* Dirección de la petición
+* Verbo de la petición
+* Autorización del emisor de la petición
+* etc
+
+
+En cualquier petición usando Angular tenemos la dirección y el verbo de la petición, pero si queremos incluir cualquier otro dato de nuestra cabecera debemos usar una configuración especial de nuestra petición.
+
+En nuestro `HttpClient` hemos visto que teníamos disponibles los métodos `.get(), post(), ...` para enviar las peticiones, y que el primer argumento era una cadena de texto que contenía la URL de la petición.
+
+Pues bien, la configuración de las opciones será el último argumento de ese método usado (el segundo argumento en un GET, el tercero en un POST, por ejemplo), y le pasaremos un objeto con pares nombre-valor. Uno de esos pares será "`Headers` que será un objeto `HttpHeaders` que contendrá los pares nombre-valor de nuestra cabecera
+
+```typescript
+
+import { HttpClient, HttpHeaders} from '@angular/common/http';
+
+
+@Injectable({ providedIn: 'root'})
+export class PostsService {
+
+  constructor(private http: HttpClient){}
+
+  postSomething(title: string, content: string) {
+    const postData = {title: title, content: content};
+    http.post(
+      'https://my-url-to-api', 
+      postData, 
+      {headers: new HttpHeaders({
+        'Custom-header': 'Hello',
+      })}
+    )
+  }
+}
+```
+
+Podemos además agregar parámetros de petición a nuestra URL usando el mismo último objeto bajo la propiedad `params`
+
+```typescript
+postSomething(title: string, content: string) {
+  const postData = {title: title, content: content};
+  http.post(
+    'https://my-url-to-api', 
+    postData, 
+    {
+    headers: new HttpHeaders({'Custom-header': 'Hello',})
+    params: new HttpParams().set('print', 'pretty')
+    
+    }
+  )
+}
+```
+
+Si quisiéramos concatenar múltiples parámetros de búsqueda la forma es un poco más enrevesada. Debemos crear previamente el objeto `HttpParams` y usar su método `.append('prop', 'valor')`, para ir agregando parámetros de dos en dos:
+
+```typescript
+
+import { HttpParams, HttpClient, HttpHeaders } from '@angular/common/http'
+...
+
+postSomething(title: string, content: string) {
+  const postData = {title: title, content: content};
+
+  let searchParams = new HttpParms();
+  searchParams = searchParams.append('print', 'pretty');
+  searchParams = searchParams.append('even', 'prettier');
+  //equivale a https://my-url-to-api?print=pretty&even=prettier
+
+  http.post(
+    'https://my-url-to-api', 
+    postData, 
+    {
+    headers: new HttpHeaders({'Custom-header': 'Hello',})
+    params: searchParams,
+    }
+  )
+}
+
+```
+
+Otra opción más que podemos mandar en nuestra petición es la propiedad `observe` que nos permite definir el tipo de respuesta a la que nos estamos subscribiendo.
+
+Por defecto nos subscribimos a un `observe: 'body'` donde el dato que recibimos en nuestro primer argumento del `callback` de `.subscribe((data)=>{})` (el `data`) es el cuerpo de la respuesta. Pero si queremos recibir por ejemplo también la cabecera de la respuesta podemos modificar el `observe` a `observe: 'response'` donde recibiremos toda la respuesta, es decir, cuerpo y cabecera.
+
+```typescript
+
+http.post(
+    'https://my-url-to-api', 
+    postData, 
+    {
+      headers: new HttpHeaders({'Custom-header': 'Hello',})
+      params: searchParams,
+      observe: 'response'
+    }
+  )
+
+```
+
+
+Ahora la respuesta tendrá el formato de un objeto con dos propiedades: `body` y `header`:
+
+```JSON
+{
+  "header": {},
+  "body": {},
+  "status": 200,
+  "url":  "https://my-url-api-answering",
+  ...
+}
+```
+
+También podemos usar `observe` con el evento de nuestra petición, que nos puede informar de eventos como el progreso de una descarga o subida de archivos, si se ha mandado una petición, si se ha recibido la petición, etc.
+
+```typescript
+
+import { HttpEventType, HttpClient} from '@angular/common/http';
+
+
+deletePosts() {
+
+  return http
+    .delete('https://url-to-api', {observe: 'event'})
+    .pipe(
+      tap( (event) => {
+        console.log(event);
+	    if (event.type === 0) {
+          console.log('Petición enviada');
+        }
+        if (event.type === HttpEventType.Response) {
+          console.log('Respuesta recibida');
+          console.log(event.body);
+        }
+      }
+    ))
+}
+```
+
+
+### Uso de `Interceptors` para configurar cabeceras de autorización
+
+
+Para usarlo primero vamos a crear un servicio llamado `auth-interceptor`
+
+```typescript
+
+import { HttpInterceptor, HttpRequest, HttpHandler } from '@angular/common/http'
+
+export class AuthInterceptorService implements HttpInterceptor {
+
+  intercept( req: HttpRequest<any>, next: HttpHandler){
+    console.log('Request on its way!');
+    return next.handle(req);  
+  }
+}
+```
+
+
+Ahora lo proveemos en nuestro array de `providers`, de una forma muy concreta para indicarle a Angular que se trata de un servicio interceptador: 
+
+```typescript
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { HttpClientModule. HTTP_INTERCEPTORS } from '@angular/common/http';
+
+import { AppComponent } from './app.component';
+import { AuthInterceptorService } from './auth-interceptor.service';
+
+@NgModule({
+  declarations: [AppComponent],
+  imports: [BrowserModule, FormsModule, HttpClientModule],
+  providers: [{provide: HTTP_INTERCEPTORS, useClass: AutInterceptorService, multi: true}],
+  bootStrap: [AppComponent]
+})
+export class AppModule {}
+```
+
+Esto hará que todas las peticiones que se hagan ejecuten el método `intercept` de nuestro servicio interceptador, por lo que podríamos usarlo para agregar opciones de *Autenticación* a nuestras peticiones.
+
+Dentro del interceptador podemos modificar la petición, pero no directamente, porque el objeto `req` que le hemos pasado es inmutable. Pero si que podemos crear uno nuevo a partir de el original, modificar ese nuevo y reemplazarlo por el original al enviarlo.
+
+```typescript
+
+export class AuthInterceptorService implements HttpInterceptor {
+
+  intercept( req: HttpRequest<any>, next: HttpHandler){
+    console.log('Request on its way!');
+    const modifiedRequest = req.clone({headers: req.headers.append('Auth', 'something')})
+    //return next.handle(req);
+    return next.handle(modifiedRequest);
+  }
+}
+```
+
+Además, podemos usar el interceptor de la petición para tener un interceptor para la respuesta de esa petición mediante el uso de un método `pipe` de `next` ya que tendrá como respuesta un observable. Un detalle importante a la hora de gestionar la respuesta recibida en el interceptor es que la respuesta es de tipo **`event`**
+
+```typescript
+import { HttpInterceptor, HttpRequest, HttpHandler, HttpEventType } from '@angular/common/http';
+import { tap } from 'rxjs/operators';
+
+export class AuthInterceptorService implements HttpInterceptor {
+  intercept(req: HttpRequest<any>, next: HttpHandler){
+    console.log('Request is on its way!');
+    const modifiedRequest = req.clone({headers: req.headers.append('Auth', 'something')});
+	return next
+	         .handle(modifiedRequest)
+	         .pipe(tap( (event) => {
+	           if (event.type === HttpEventType.Response){
+	             console.log(event);
+	             console.log('Response arrived');
+	           }
+	         }));
+  }
+}
+
+```
+
+Si quisiéramos usar mas *Interceptadores* lo configuraríamos igual, pero en el `AppModule` lo agregaríamos así
+
+```typescript
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { HttpClientModule. HTTP_INTERCEPTORS } from '@angular/common/http';
+
+import { AppComponent } from './app.component';
+import { AuthInterceptorService } from './auth-interceptor.service';
+import { LoggingInterceptorService } from './log-interceptor.service';
+
+@NgModule({
+  declarations: [AppComponent],
+  imports: [BrowserModule, FormsModule, HttpClientModule],
+  providers: [
+    {provide: HTTP_INTERCEPTORS, useClass: AutInterceptorService, multi: true},
+    {provide: HTTP_INTERCEPTORS, useClass: LoggingInterceptorService, multi: true},
+  ],
+  bootStrap: [AppComponent]
+})
+export class AppModule {}
+
+```
+
+Y en este caso primero se ejecuta el interceptor `AutInterceptorService` y después el `LoggingInterceptorService`
