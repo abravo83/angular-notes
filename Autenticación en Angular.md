@@ -43,9 +43,250 @@ export class User {
   // Función getter: Se ejecuta cuando accedemos a la propiedad con el nombre de la función: User.token
   // Entonces es algo entre propiedad y método. Funciona como método pero se accede a ella como propiedad.
   get token() {
+
+    // Podemos comprobar si el token ya ha caducado
+    if ( !this._tokenExpirationDate || new Date() > this._tokenExpirationDate ) {
+      return null;
+    }
     
+    return this._token
   }
+
 
 
 }
 ```
+
+
+Luego, en un servicio podemos guardar el Usuario como un `Subject,` al que nos podemos subscribir desde otros componentes
+
+```typescript
+import { Injectable } from '@angular/core';
+import { throwError, BehaviorSubject } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
+
+import { User } from './user.model';
+
+export interface AuthResponseData {
+  kind: string;
+  idToken: string;
+  email: string;
+  refreshToken: string;
+  expiresIn: string;
+  localId: string;
+  registered: boolean;
+}
+
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+
+  // Crearemos un usuario cuando usemos next al registrarnos y al hacer login
+  user = new BehaviorSubject<User>(null);
+  //token: string = null;
+  
+  signUp(email: string, password: string){
+    return this.http.post<AuthResponseData>(
+        'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyA6dAa04mUEO_HrXQ0M7Ckh6weIzmIAX-Q',
+        { 
+          email: email,
+          password: password,
+          returnSecureToken: true
+        }
+        ).pipe(
+          catchError(this.handleError)
+          tap((resData: any) => {
+            this.handleAuthentication(resData.email, resData.localId, resData.idToken, +resData.expiresIn);
+          } 
+       )
+   }
+   
+  logIn(email: string, password: string): Observable<any> {
+     const body = {
+       email: email,
+       password: password,
+       returnSecureToken: true
+     }
+
+     return this.http.post('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyA6dAa04mUEO_HrXQ0M7Ckh6weIzmIAX-Q', body
+     ).pipe(
+      tap((resData: any) => {
+        this.handleAuthentication(resData.email, resData.localId, resData.idToken, +resData.expiresIn);
+      }
+     ),
+     catchError(this.handleError))
+   }
+
+// Para no repetir el código en login y signup creamos un método aparte que realice la inicialización del usuario una vez autenticado.
+  private handleAuthentication(email: string, localId: string, token: string, expiresIn: number) {
+    const expirationDate = new Date(new Date().getTime() + expiresIn * 1000);
+    const user = new User(email, localId, token, expirationDate);
+	// Aquí asignamos el valor al Subject
+    this.user.next(user);
+  }
+  
+}
+
+```
+
+
+## Agregando la Cabecera de Autorización
+
+Llegado a este punto ya hemos conseguido dos cosas: Registrar a un usuario nuevo y `loguear `a un usuario existente. Pero, como hemos dicho, la verdadera funcionalidad de estar autenticado es la restricción de la respuesta del `backend`. Para ello nuestras subsecuentes peticiones deben y con el encabezado de la autenticación para que sea nuestro `backend` el que valide o no si estamos autorizados a recibir la respuesta de la petición que le estamos realizando.
+
+
+Para ello, ya que vamos a agregar dicha cabecera a todas nuestras peticiones, lo ideal es usar un Interceptador con los datos de identificación de nuestro token de autorización que hemos recibido al `loguearnos `o registrarnos, pero primero vamos a ver el caso en el que no usamos dicho interceptador y agregamos  la cabecera a nuestra petición de manera individual (Es decir, lo agregamos a una petición en concreto, ya que el interceptador haría que se agregase a todas nuestras peticiones sin necesidad de modificar nada de nuestras peticiones.);
+
+Petición sin cabecera de autorización
+
+```typescript
+storeRecipes() {
+  const recipes = this.recipeService.getRecipes();
+  this.http.put('https://route.to.api.com/recipes', recipes).subscribe(response => console.log(response));
+}
+```
+
+
+Misma petición con cabecera de autorización. El token lo tenemos almacenado en caché como propiedad de nuestro objeto user, que a su vez lo cogerá del **`BehaviorSubject`** `user` del servicio `AuthService`
+
+
+```typescript
+import { HttpHeaders, HttpClient } from '@angular/common/http';
+
+import { recipeService } from './recipe.service';
+import { authService } from './auth.service';
+
+export class DataStorage {
+  
+  constructor(private http: HttpClient, private recipeService, private authService: AuthService) {}
+  
+  storeRecipes() {
+	// Al usar el método pipe con el operador take(1) lo que hacemos es una subscripción única donde recibimos el dato una vez y cancelamos la subscripción.
+	// El siguiente operador: exhaustMap hace que se combinen los dos observables, el del Behavior Subject y el de la petición, en un único observable
+	
+    this.authService.user.pipe(take(1), exhaustMap).subscribe(user => {
+    
+       const recipes = this.recipeService.getRecipes();
+	   //Ya habíamos creado un getter para token que accede a _token 
+       const authToken = this.user.token;
+       
+       //Creamos la cabecera de la petición
+       const headers = new HttpHeaders({
+       'Content-Type': 'application/json',
+       'Authorization':: 'Bearer ' + authToken
+       });
+       
+       // Agregamos la cabecera a la petición
+       this.http.put('https://route.to.api.com/recipes', recipes, { headers: headers }).subscribe(response => console.log(response));
+    
+    } )
+  }
+}
+```
+
+
+## Usando Interceptores para agregar la cabecera
+
+Para  manipular todas las peticiones salientes vamos a crear un nuevo archivo que va a contener nuestra lógica del interceptor: `auth-interceptor.service.ts`
+
+```typescript
+import { Injectable } from '@angular/core';
+import { Interceptor, HttpHeader, HttpClient } from '@angular/common/http';
+import { take, exhaustMap}
+
+import { AuthService } from './auth.service';
+
+
+// No le agregamos el 'providedIn': 'root' porque vamos a usar otra forma de provisionarlo.
+@Injectable()
+export class AuthInterceptorService implements HttpInterceptor {
+
+
+  // Usamos el constructor para injectar el servicio AuthService
+
+  constructor(private authService: AuthService){}
+
+  intercept(req: HttpRequest<any>, next: HttpHandler) {
+    // Tenemos que obtener el Subject usuario para lo que tenemos que subscribirnos a él.
+    // El problema es que aparte tenemos otra subscripción por lo que debemos juntar ambas
+    // Lo que vamos a hace usando el pipe take(1) y el pipe exahustMap de rxjs
+    return this.authService.user.pipe(
+      take(1),
+      exhaustMap(user => {
+        
+        // Creamos la cabecera
+	    const headers = new HttpHeaders({
+	     'Content-Type': 'application/json',
+         'Authorization':: 'Bearer ' + user.token
+        });
+        
+        // Clonamos la petición y la modificamos.
+	    const modifiedRequest = req.clone({headers: headers})
+        return next.handle(modifiedRequest);
+      })
+    )
+  }
+}
+```
+
+Para que el interceptor funcione interceptando las peticiones debemos incluirlo como `provider` en `AppModule`
+
+```typescript
+//app.module
+
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+
+import { AuthInterceptorService } from './auth-interceptor.service';
+
+@NgModule({
+  declarations: [
+    //...
+  ],
+  providers: [
+  // ...,
+  {provide: HTTP_INTERCEPTORS, useClass: AuthInterceptorService, multi: true} //multi nos permite usar más de un interceptor.
+  ]
+})
+
+```
+
+El problema es que debemos  de poder de alguna forma sacar a nuestras peticiones de registro y `logueo` del interceptador ya que no puedes usar el objeto usuario porque no se define hasta que se ejecutan esas peticiones, por lo que estas peticiones fallan al ser usadas por el interceptor.
+
+Para ello, modificamos el interceptor incluyendo el condicional de si no tenemos usuario:
+
+```typescript
+// auth-interceptor.service.ts
+
+  //...
+
+  intercept(req: HttpRequest<any>, next: HttpHandler) {
+    // Tenemos que obtener el Subject usuario para lo que tenemos que subscribirnos a él.
+    // El problema es que aparte tenemos otra subscripción por lo que debemos juntar ambas
+    // Lo que vamos a hace usando el pipe take(1) y el pipe exahustMap de rxjs
+    return this.authService.user.pipe(
+      take(1),
+      exhaustMap(user => {
+
+		// AGREGAMOS EL CONDICIONAL SI NO HAY USUARIO PARA PODER MANDAR LA PETICIÓN CUANDO NO HAY USUARIO
+		// Si no hay usuario devolvemos la petición original
+		if (!user) {
+          return next.handle(req);
+		}
+        
+        
+        // Creamos la cabecera
+	    const headers = new HttpHeaders({
+	     'Content-Type': 'application/json',
+         'Authorization':: 'Bearer ' + user.token
+        });
+        
+        // Clonamos la petición y la modificamos.
+	    const modifiedRequest = req.clone({headers: headers})
+        return next.handle(modifiedRequest);
+      })
+    )
+  }
+```
+
