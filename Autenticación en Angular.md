@@ -89,7 +89,7 @@ export class AuthService {
   
   signUp(email: string, password: string){
     return this.http.post<AuthResponseData>(
-        'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyA6dAa04mUEO_HrXQ0M7Ckh6weIzmIAX-Q',
+        'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=tHISiSyOURkEY-Q',
         { 
           email: email,
           password: password,
@@ -110,7 +110,7 @@ export class AuthService {
        returnSecureToken: true
      }
 
-     return this.http.post('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyA6dAa04mUEO_HrXQ0M7Ckh6weIzmIAX-Q', body
+     return this.http.post('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=ThisIsYOURaPIkEY', body
      ).pipe(
       tap((resData: any) => {
         this.handleAuthentication(resData.email, resData.localId, resData.idToken, +resData.expiresIn);
@@ -252,6 +252,11 @@ import { AuthInterceptorService } from './auth-interceptor.service';
 
 ```
 
+
+
+### Gestión del Interceptor cuando no nos hemos logueado ni registrado
+
+
 El problema es que debemos  de poder de alguna forma sacar a nuestras peticiones de registro y `logueo` del interceptador ya que no puedes usar el objeto usuario porque no se define hasta que se ejecutan esas peticiones, por lo que estas peticiones fallan al ser usadas por el interceptor.
 
 Para ello, modificamos el interceptor incluyendo el condicional de si no tenemos usuario:
@@ -288,5 +293,66 @@ Para ello, modificamos el interceptor incluyendo el condicional de si no tenemos
       })
     )
   }
+```
+
+
+
+## Haciendo `Logout`
+
+En estos ejemplos, los inicios de sesión se hacen cuando se obtiene y se inicializa el objeto `user`, por lo tanto, para hacer el `logout` sólo debemos hacer que `user=null` en el servicio. Además, si estamos en alguna parte restringida de la aplicación, o igualmente si no, debemos hacer que la aplicación navegue a la parte inicial importando `Router` en el servicio y haciendo que en el mismo método que se ejecuta al hacer `logout` hagamos `this.router.navigate('/inicio')` 
+
+
+## Guardar el Token en el navegador para hacer `Auto-Login`
+
+
+### Guardando el Token
+
+En el navegador podemos utilizar el almacenamiento local o las `cookies` (Alguna de estas dos utilidades) para guardar información en el navegador que no queremos que desaparezca cuando recargamos la página.
+
+Podemos utilizar esto para guardar la información de nuestro `token` de autorización y así poder gestionar un `auto-logueo` para que no perdamos la información de este token al recargar la página.
+
+En la función en la que gestionábamos la respuesta de ambas peticiones de registro y logueo para fijar el valor del **Subject** `user` vamos a añadir métodos para guardar el token en el navegador:
+
+```typescript
+//Hello
+private handleAuthentication (
+  email: string,
+  userId: string,
+  token: string,
+  expiresIn: number
+){
+  const expirationDate = new Date(new Date().getTime() + expiresIn * 1000);
+  const user = new User(email, userId, token, expirationDate);
+  this.user.next(user);
+  //Aquí guardamos el token
+  localStorage.setItem('authToken', JSON.stringify(user.token));
+  localStorage.setItem('expirationDate', JSON.stringify(user.expirationDate));
+  
+}
+```
+
+### Reiniciando sesión al recargar la aplicación
+
+
+Vamos a crear un método para que haga un inicio de sesión en nuestro servicio de autenticación `AuthService`
+
+```typescript
+
+autoLogin(){
+  const authToken = JSON.parse(localStorage.getItem('authToken'));
+  const expirationDate = JSON.parse(localStorage.getItem('expirationDate'))
+  
+  // Si no hay ningún token en el navegador o está caducado no intentamos el inicio de sesión
+  if (!authToken || expirationDate < new Date() ) {
+    return;
+  }
+  // Debemos de tener algún endpoint que nos permita a partir de un token de autorización recuperar el usuario
+  // Si lo hay y nos devuelve al usuario iniciamos sesión.
+  this.http.get('http://api.endpoint/userfromtoken', authToken).subscribe(user => {
+    if (user) {
+       this.handleAuthentication(user.email, user.userId, authToken, expirationDate) 
+    }
+  })
+}
 ```
 
