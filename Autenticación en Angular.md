@@ -356,3 +356,71 @@ autoLogin(){
 }
 ```
 
+
+#### ¿ Dónde podemos llamar a este método ?
+
+Para que el método `autoLogin` se ejecute al reiniciar o iniciar la aplicación podemos llamar a su ejecución desde nuestro componente raíz `app.component.ts`  usando el ciclo `NgOnInit` para llamar a su ejecución.
+
+
+## Mejorando nuestro `LogOut`
+
+Al hacer `Log-out` debemos también preocuparnos de eliminar nuestro token y otros datos, para que no funcione el `auto-login` cada vez que recargamos.
+
+Entonces, en nuestro método `logOut` vamos a agregar funcionalidad que elimine el `localStorage` de nuestro token y fecha de caducidad.
+
+```typescript
+logout(){
+  this.user.next(null);
+  this.router.navigate('/auth');
+  localStorage.removeItem('token');
+  localStorage.removeItem('expirationDate');
+}
+```
+
+También podemos crear un método que se ejecute con un `TimeOut` y que fuerce un `autoLogOut` cuando el momento de caducidad llegue mientras estamos usando la aplicación. Aunque esto puede ser un fastidio para la experiencia de usuario.
+
+## Protegiendo las rutas que requieren autenticación
+
+
+Puede que en nuestra aplicación hayamos "ocultado" enlaces a las secciones que no queremos mostrar cuando no estamos autenticados, pero eso no hace que, si tienen ruta, podamos acceder a esas secciones usando directamente la ruta en la barra de direcciones. Por ello necesitamos proteger dichas rutas con un `Guard` que compruebe si estamos o no autenticados.
+
+Podemos crear un archivo tipo `guard`, que es un tipo especial de servicio:
+
+```typescript
+import { Router } from '@angular/router';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
+
+import { AuthService } from './auth.service';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthGuard implements CanActivate {
+
+  constructor(private authService: AuthService, private router: Router){}
+
+
+  canActivate(
+    route: ActivatedRouteSnapShot,
+    router: RouterStateSnapshot
+  ): boolean | Promise<boolean> | Observable<boolean> {
+    // Realizamos una petición para ver si tenemos login al contar con Subject user
+    return this.authService.user.pipe(map(
+      user => {
+        return !!user;
+      }
+    ),
+    tap ( isAuth => {
+      if (!isAuth) {
+       return this.router.navigate(['/auth'])
+      }
+    })
+    )
+  }
+  
+}
+
+
+```
