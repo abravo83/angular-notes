@@ -387,10 +387,10 @@ Puede que en nuestra aplicación hayamos "ocultado" enlaces a las secciones que 
 Podemos crear un archivo tipo `guard`, que es un tipo especial de servicio:
 
 ```typescript
-import { Router } from '@angular/router';
+import { Router, UrlTree, } from '@angular/router';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { map, tap, take } from 'rxjs/operators';
 
 import { AuthService } from './auth.service';
 
@@ -402,25 +402,51 @@ export class AuthGuard implements CanActivate {
   constructor(private authService: AuthService, private router: Router){}
 
 
-  canActivate(
-    route: ActivatedRouteSnapShot,
-    router: RouterStateSnapshot
-  ): boolean | Promise<boolean> | Observable<boolean> {
+  canActivate(route: ActivatedRouteSnapShot, router: RouterStateSnapshot): boolean | Promise<boolean> | Observable<boolean | UrlTree> {
     // Realizamos una petición para ver si tenemos login al contar con Subject user
-    return this.authService.user.pipe(map(
-      user => {
-        return !!user;
-      }
-    ),
-    tap ( isAuth => {
-      if (!isAuth) {
-       return this.router.navigate(['/auth'])
-      }
-    })
+    return this.authService.user.pipe(
+      // Para que la subscripción se cancele tras la primera respuesta
+      take(1),
+      map(
+        user => {
+          const isAuth = !!user;
+          if (isAuth) {
+            return true;
+          }
+	      //Al devolver una ruta estamos sustituyendo lo que hace el router de forma nativa
+	      return this.router.createUrlTree(['/auth'])
+        }
+      ),
+    //tap ( isAuth => {
+      //if (!isAuth) {
+       //return this.router.navigate(['/auth'])
+      //}
+    //)
     )
-  }
-  
+  }  
 }
+
+```
+
+Y luego en nuestro archivo de rutas protegemos la ruta con el `Guard` usando el método `canActivate`
+
+```typescript
+\\ app-routing.module.ts
+import { AuthGuard } from './auth/auth.guard'
+
+const appRoutes: Routes = [
+
+  { path: '', redirectTo: '/recipes', pathMatch: 'full' },
+  { path: 'recipes', component: RecipesComponent,canActivate: [AuthGuard],  children: [
+    { path: '', component: RecipeStartComponent },
+    { path: 'new', component: RecipeEditComponent },
+    { path: ':id', component: RecipeDetailComponent, resolve: [RecipesResolverService] },
+    { path: ':id/edit', component: RecipeEditComponent, resolve: [RecipesResolverService] },
+  ] },
+
+  { path: 'shopping-list', component: ShoppingListComponent },
+  { path: 'auth', component: AuthComponent },
+];
 
 
 ```
