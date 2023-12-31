@@ -16,11 +16,11 @@ El orden correcto de estudio de los temas es:
 10. Pipes en Angular
 11. Peticiones HTTP en Angular
 12. Autenticación y protección de rutas en Angular
+13. Componentes dinámicos en Angular
     
 //TODO:
-
-14. Componentes dinámicos en Angular
-15. Signals en Angular
-16. Angular Universal (SSR)
-17. Unit testing en Angular
-18. ...
+14. Módulos y Optimización de la aplicación Angular 
+14. Signals en Angular
+15. Angular Universal (SSR)
+16. Unit testing en Angular
+17. ...

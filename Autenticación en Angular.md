@@ -402,7 +402,7 @@ export class AuthGuard implements CanActivate {
   constructor(private authService: AuthService, private router: Router){}
 
 
-  canActivate(route: ActivatedRouteSnapShot, router: RouterStateSnapshot): boolean | Promise<boolean> | Observable<boolean | UrlTree> {
+  canActivate(route: ActivatedRouteSnapShot, router: RouterStateSnapshot): | boolean | UrlTree | Promise<boolean | UrlTree> | Observable<boolean | UrlTree> {
     // Realizamos una petición para ver si tenemos login al contar con Subject user
     return this.authService.user.pipe(
       // Para que la subscripción se cancele tras la primera respuesta
@@ -417,6 +417,7 @@ export class AuthGuard implements CanActivate {
 	      return this.router.createUrlTree(['/auth'])
         }
       ),
+    // Antiguamente no podíamos devolver un UrlTree, entonces lo que se hacía es que el map anterior devolvía no solo true sino también false cuando no se estaba autenticado, entonces podíamos usar tap para evaluar esa respuesta de map y hacer que el navegador vaya a la página de registro e inicio de sesión.
     //tap ( isAuth => {
       //if (!isAuth) {
        //return this.router.navigate(['/auth'])
@@ -437,7 +438,7 @@ import { AuthGuard } from './auth/auth.guard'
 const appRoutes: Routes = [
 
   { path: '', redirectTo: '/recipes', pathMatch: 'full' },
-  { path: 'recipes', component: RecipesComponent,canActivate: [AuthGuard],  children: [
+  { path: 'recipes', component: RecipesComponent, canActivate: [AuthGuard],  children: [
     { path: '', component: RecipeStartComponent },
     { path: 'new', component: RecipeEditComponent },
     { path: ':id', component: RecipeDetailComponent, resolve: [RecipesResolverService] },
@@ -447,6 +448,5 @@ const appRoutes: Routes = [
   { path: 'shopping-list', component: ShoppingListComponent },
   { path: 'auth', component: AuthComponent },
 ];
-
 
 ```
