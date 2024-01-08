@@ -184,10 +184,53 @@ Y en nuestro módulo principal donde está AppRouting
 
 const routes: Routes = [
   {path: '', redirectTo: '/inicio', pathMatch: 'full'},
-  {path: 'producto', loadChildren},
+  {path: 'producto', loadChildren: './productos.module#ProductosModule' },
   ...
 ]
 
 ```
 
-Y con ese loadChildren hacemos LazyLoading
+Y con ese `loadChildren` hacemos `LazyLoading` indicándole la ruta al módulo que vamos a cargar usando LazyLoading y una almohadilla seguido del nombre de la clase de ese módulo.
+
+Hay una forma diferente, más moderna y preferible cuando sea posible, para usar lazyLoading, que podemos probar si la anterior no nos ha funcionado:
+
+```typescript
+
+const routes: Routes = [
+  {path: '', redirectTo: '/inicio', pathMatch: 'full'},
+  {path: 'producto', loadChildren: () => import('.productos/module').then(m => m.ProductosModule) },
+  ...
+]
+
+```
+
+Por último, debemos quitar de nuestro `AppModule` la importación del módulo que queremos cargar usando `LazyLoading` ya que lo que tenemos en las importaciones se va a cargar de manera `eager`, es decir, inmediata, por lo que debemos quitarlo de nuestro array de importaciones.
+
+Y con eso deberíamos reducir la carga inicial de nuestra aplicación, ya que el módulo `/producto` no se va a cargar hasta que visitemos la ruta `/producto`.
+
+## Haciendo precarga de los módulos que están siendo `LazyLoaded` usando una estrategia de precarga
+
+Para mejorar la carga de esos módulos podemos decirle a nuestro módulo de rutas que haga precarga de los módulos, añadiendo en el método `forRoot` nuestra `preloadingStrategy` y fijándola con la constante `PreloadAllModules`, que le indicará a las rutas que vaya descargando cada módulo según sea posible, lo cual nos permite hacer `lazyLoading` pero haciendo una precarga, y no esperando a que estemos en la ruta del módulo para empezar la descarga.
+
+```typescript
+import { NgModules } from '@angular/core';
+import { Routes, RouterModule, PreloadAllModules } from '@angular/router';
+
+const appRoutes: Routes = [
+  {path: '', redirectTo: '/inicio', pathMatch: 'full'},
+  {path: 'producto', loadChildren: () => import('.productos/module').then(m => m.ProductosModule) }
+]
+
+@NgModule({
+  imports: [RouterModule.forRoot(appRoutes, {preloadingStrategy: PreloadAllModules})],
+  exports: [RouterModule]
+})
+export class AppRoutingModule {}
+
+```
+
+## Servicios y `LazyLoading`
+
+Todos los servicios que estén siendo cargados en un módulo que se ha cargado de forma `LazyLoaded` recibirán una instancia separada de ese servicio, por lo que si tenemos declarado un servicio tanto en un módulo que se carga de forma inmediata y el mismo servicio declarado en un módulo que se carga de manera `lazy` entonces en realidad tendremos *dos* instancias de ese servicio, lo que va a resultar en un comportamiento extraño en la aplicación.
+
+Es por ello que debemos importar nuestros servicios usando en el `@inyectable({providedIn: 'root'})`  para hacer nuestro servicio disponible para toda la aplicación, independiente de cualquier módulo, evitando así este posible problema de una múltiple instanciación de un mismo servicio por importarlos en módulos `lazy` y módulos inmediatos de forma independiente.

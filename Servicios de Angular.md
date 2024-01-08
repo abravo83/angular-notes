@@ -142,7 +142,11 @@ export class ComponenteReceptor {
   }
 }
 ```
-### Comunicación entre componentes usando un servicio usando un método del servicio
+### Comunicación entre componentes usando un servicio
 
-
+Podemos utilizar diferentes estrategias:
+ * Propiedades: Compartiendo una propiedad entre componentes
+ * Subjects: Nos permite definir un objeto y emitir un evento para que se actualice en otro componente
+ * BehaviourSubject: Nos permite definir un objeto y emitir un evento para que se actualice en otro componente. Nos subscribimos en los componentes a este subject.
+ * Signals: Nos permite definir un objeto y emitir un evento para que se actualice en otro componente. Nos subscribimos en los componentes a esta signal.
 
