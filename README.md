@@ -1,5 +1,5 @@
 # Notas de estudio de Angular
-Estas son algunas notas de estudio de Angular2+ (Versión actual: 16)
+Estas son algunas notas de estudio de Angular2+ (Versiones actuales: 16 ~ 17)
 
 Cada archivo contiene un tema en concreto.
 
@@ -17,10 +17,11 @@ El orden correcto de estudio de los temas es:
 11. Peticiones HTTP en Angular
 12. Autenticación y protección de rutas en Angular
 13. Componentes dinámicos en Angular
+14. Módulos y Optimización de la aplicación Angular 
+15. Componentes `Standalone` en Angular
     
 //TODO:
-14. Módulos y Optimización de la aplicación Angular 
-14. Signals en Angular
-15. Angular Universal (SSR)
-16. Unit testing en Angular
-17. ...
+16. Signals en Angular
+17. Angular Universal (SSR)
+18. Unit testing en Angular
+19. ...
