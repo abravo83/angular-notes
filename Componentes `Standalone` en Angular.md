@@ -81,3 +81,86 @@ bootstrapApplicaciont(AppComponent);
 ```
 
 ## `Routing` con componentes `Standalone`
+
+Lo primero que debemos hacer es importar el módulo `RouterModule` en nuestro componente `standalone`.
+
+Después en nuestro `main.ts` debemos indicarle a toda la aplicación (Ya que no nos sirve a partir de los `NgModules`, ya que los componentes `standalone` no los usan), dónde ubicar nuevamente el archivo principal de `routing` (que es un módulo convencionalmente llamado `AppRoutingModule`) para que esté disponible a toda la aplicación sin pasar por ningún módulo y lo vamos a hacer usando un método llamado **`importProvidersFrom`**:
+
+```typescript
+import { enableProdMod, importProvidersFrom } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+
+import { AppRoutingModule } from './app/app-routing-module';
+import { AppComponent } from './app/app.component';
+import { environment } from './environment/environment';
+
+if (environment.production) {
+  enableProdMode();
+}
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    importProvidersFrom(AppRoutingModule);
+  ]
+})
+
+```
+
+Una vez definido el archivo de rutas principal podemos definir las rutas anidadas que pueda tener definidas un componente `standalone` o las rutas que deben cargarse de forma `Lazy loading` como ya vimos.
+
+La **novedad** es una **nueva sintaxis** para hacer `LazyLoading` de componentes `standalone` que en vez de usar el método `loadChildren` usamos **`loadComponent`**, y nos permite hacer `Lazy loading` directamente de componentes `standalone` sin necesidad de separarlos en módulos de rutas independientes que se cargan de forma `lazy`, como ocurre al usar el método `loadChildren`
+
+```typescript
+import { NgModule } from '@angular/core';
+
+import { AboutComponent } from './app/about.component';
+import { DashboardRoutingModule } from './app/dashboard-routing.module';
+
+const routes = [
+  {path: '', component: 'InicioComponent', fullPathMatch: true},
+  {path: 'about', loadComponent: () => import('./app/about.component').then((m) => m.AboutComponent)},
+  {path: 'dashboard', loadChildren: () => import('./app/dashboard.module').then((m) => m.DashboardRoutingModule)},
+]
+
+@NgModule({
+  imports: [RouterModule.forRoots(routes)],
+  exports: [RouterModule],
+})
+export class AppRoutingModule {}
+
+```
+
+Otra estrategia nueva para cargar de forma `lazy` componentes `standalone` es usar `loadChildren` pero apuntando a un archivo `.ts` que exporte una constante donde definamos un objeto de rutas para esa parte de la aplicación que queremos que se cargue de forma `lazy`, de forma similar a como hacíamos cuando definíamos un módulo independiente para esa parte:
+
+```typescript
+\\ dashboard/routes.ts
+
+//Necesitamos definir el objeto de rutas con el tipo Route
+import { Route } from '@angular/router';
+
+// Necesitamos importar los componentes de cada ruta
+import { DashboardComponent } from './app/dashboard.component';
+import { TodayCoponent } from './app/today.component';
+
+export const DASHBOARD_ROUTES: Route[] = [
+  {path: '', component: DashboardComponent},
+  {path: 'today', component: TodayComponent},
+];
+
+```
+
+Entonces modificaríamos nuestro `AppRoutingModule` para importar este objeto de rutas en el `loadChildren`:
+
+```typescript
+...
+
+const routes = [
+  {path: '', component: 'InicioComponent', fullPathMatch: true},
+  {path: 'about', loadComponent: () => import('./app/about.component').then((m) => m.AboutComponent)},
+  {path: 'dashboard', loadChildren: () => import('./app/dashboard/routes').then((m) => m.DASHBOARD_ROUTES)},
+]
+
+...
+
+```
+
