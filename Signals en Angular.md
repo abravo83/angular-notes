@@ -107,3 +107,70 @@ Para mostrar una `Signal` en nuestra plantilla o recuperar su valor en `.ts` no 
 this.counter.set(this.counter() + 1);  //Nos sirve también para incrementar el valor anterior
 ```
 
+
+
+## Usando `Signals` junto a `Computed`
+
+`computed` es elemento importado de `@angular/core` que se usa para devolver valores basados en cálculos hechos sobre los valores que contienen `signals`.
+
+Si necesitamos guardar un valor que depende de la lectura y modificación de otro valor que está contenido en un `signal` debemos usar `computed` para que recupere el valor de la `signal`, realice el cálculo y nos devuelva el valor.
+
+La pregunta que nos deberíamos hacer entonces, es ¿por qué no simplemente recuperar el valor de la `signal` llamándola así:
+
+```typescript
+import { Component, signal, computed } from '@angular/core';
+
+...
+
+counter = signal(3);
+doubleCounter = this.counter() * 2;
+```
+
+Y la respuesta es que si lo hacemos así, el valor de `doubleCounter` no se va a actualizar cada vez que se modifique la `signal`. Pero si usamos `computed` si que lo hará:
+
+```typescript
+import { Component, signal, computed } from '@angular/core';
+
+...
+
+counter = signal(3);
+doubleCounter = computed(()=> this.counter() * 2);
+```
+
+## ¿ Cómo se usa un `computed`?
+
+Como ya hemos visto en el ejemplo, un computed se usa ejecutando la función `computed()` usando como argumento un callback de una función anónima sin argumentos dentro de la cual recuperamos el valor de la signal que queremos usar y le aplicamos el cálculo que va a modificar su valor:
+
+```typescript
+
+example = computed( ()=> this.signalExample() * 3.1416^2  );
+```
+
+
+## ¿ Cómo consumiríamos un `computed`?
+
+Para  ver el valor de un `computed` tanto en .ts como en el .html lo vamos a hacer de forma similar a una `signal`, ejecutándolo como un método de la clase del componente:
+
+```html
+<div>{{ doubleCounter() }}</div>
+```
+
+Y cada vez que la `signal` se modifique también lo hará el valor `computed`.
+
+
+## Usando `signals` junto a `effect`
+
+`effect` tiene similitudes a `computed` que hacen que ambos sigan el valor de un `signal`, pero `computed` evalúa que `signals` se llaman dentro del bloque de código de la función `effect` y ejecuta dicho código cada vez que se modifica el valor de una de esas `signals`.
+
+Típicamente se ejecuta en el constructor o en `onInit`, y también se importa desde `@angular/core`;
+
+```typescript
+constructor(){
+  effect(()=>{
+    console.log(this.signalExample());
+    this.updatesCounter += 1;
+  })
+}
+
+```
+
