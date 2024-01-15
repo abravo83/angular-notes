@@ -1,0 +1,18 @@
+{
+	"nodes":[
+		{"id":"86efcb7b49481057","type":"text","text":"<div style=\"text-align: center;\">Store</div>","x":-20,"y":-277,"width":220,"height":50,"color":"2"},
+		{"id":"bc9b52375688e926","type":"text","text":" <div style=\"text-align: center\">Selector</div>","x":-380,"y":-277,"width":240,"height":50,"color":"6"},
+		{"id":"1d692f7a196e3b75","type":"text","text":"<div style=\"text-align: center;\">Component</div>","x":-370,"y":-100,"width":220,"height":50,"color":"4"},
+		{"id":"81f6b8d24763d950","type":"text","text":"<div style=\"text-align: center;\">Reducers</div>","x":-20,"y":-188,"width":220,"height":50,"color":"3"},
+		{"id":"31df39d1d33dceb1","type":"text","text":"<div style=\"text-align: center;\">Actions</div>","x":-20,"y":-100,"width":220,"height":50,"color":"1"},
+		{"id":"8fe2c6ae55852cb9","type":"text","text":"<div style=\"text-align: center;\">Effects</div>","x":-20,"y":0,"width":220,"height":50,"color":"1"}
+	],
+	"edges":[
+		{"id":"209d060575dc289e","fromNode":"86efcb7b49481057","fromSide":"left","toNode":"bc9b52375688e926","toSide":"right","toEnd":"none"},
+		{"id":"dfd6e9deaf2a08ff","fromNode":"bc9b52375688e926","fromSide":"bottom","toNode":"1d692f7a196e3b75","toSide":"top"},
+		{"id":"e254c4f46a9580c6","fromNode":"1d692f7a196e3b75","fromSide":"right","toNode":"31df39d1d33dceb1","toSide":"left"},
+		{"id":"373cc1bb94650e9c","fromNode":"31df39d1d33dceb1","fromSide":"top","toNode":"81f6b8d24763d950","toSide":"bottom"},
+		{"id":"43a2bee5e7356362","fromNode":"81f6b8d24763d950","fromSide":"top","toNode":"86efcb7b49481057","toSide":"bottom"},
+		{"id":"e53474bcd8565537","fromNode":"31df39d1d33dceb1","fromSide":"bottom","toNode":"8fe2c6ae55852cb9","toSide":"top"}
+	]
+}

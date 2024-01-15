@@ -19,9 +19,11 @@ El orden correcto de estudio de los temas es:
 13. Componentes dinámicos en Angular
 14. Módulos y Optimización de la aplicación Angular 
 15. Componentes `Standalone` en Angular
-    
+16. `Signals` en Angular
+17. `NgRx` en Angular
+
+
 //TODO:
-16. Signals en Angular
-17. Angular Universal (SSR)
-18. Unit testing en Angular
-19. ...
+18. Angular Universal (SSR)
+19. `Unit testing` en Angular
+20. ...
