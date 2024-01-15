@@ -1,4 +1,3 @@
-
 ## ¿Qué es `NgRx`?
 
 Es una librería de Angular que nos permite guardar estado de nuestra aplicación. Por tanto se define como una `Solución de Administración de Estado` o `State Management Solution`.
@@ -130,4 +129,39 @@ export function counterReducer(state = initialState) {
 
 ```
 
-Y esta forma sirve para las aplicaciones que no tienen `counterReducer` pero también nos serviría para los que lo tienen, porque al final lo que está haciendo `createReducer` es fijar un prototipo de esta función (`counterReducer) por nosotros.
+Y esta forma sirve para las aplicaciones que no tienen `counterReducer` pero también nos serviría para los que lo tienen, porque al final lo que está haciendo `createReducer` es fijar un prototipo de esta función (`counterReducer`) por nosotros.
+
+## ¿ Cómo se accede a los datos almacenados en el `Store`?
+
+Para acceder a los datos del `Store` podemos acceder a nuestro `Store` vamos inyectar en nuestro componente el servicio `Store` de ' @ngrx/store'
+
+```typescript
+import { Component } from '@angular/core';
+import { Observable } from 'rxjs';
+import { Store } from '@ngrx/store';
+import { AsyncPipe } from '@angular/common';
+
+@Component({
+  selector: 'app-counter-output',
+  templateUrl: './counter-output.component.html';
+  styleUrls: ['./counter.output.component.css'],
+  standalonte: true,
+  imports: [AsyncPipe]
+})
+export class CounterOutputComponent {
+  //El decorador $ al final en una convención para variables que guardan Observables
+  count$: Observable<number>;
+
+  constructor(private store: Store<{counter: number}>){
+    this.count$ = store.select('counter');  // El counter que definimos para nuestro counterReducer
+  }
+}
+```
+
+Y en el `html` lo usaríamos así
+
+```html
+<p>{{ count$ | async}}</p>
+<!-- Usamos el pype async para decirle a angular que es una variable que puede modificarse posteriormente por un proceso asíncrono al ser un observable -->
+```
+
