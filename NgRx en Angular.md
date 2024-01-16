@@ -130,6 +130,7 @@ export function counterReducer(state = initialState) {
 ```
 
 Y esta forma sirve para las aplicaciones que no tienen `counterReducer` pero también nos serviría para los que lo tienen, porque al final lo que está haciendo `createReducer` es fijar un prototipo de esta función (`counterReducer`) por nosotros.
+Esta forma es útil para ver lo que `createReducer` hace por nosotros, pero si tenemos una versión donde este último está disponible es recomendable usarlo en vez de definir nosotros mismos la función `reducer`
 
 ## ¿ Cómo se accede a los datos almacenados en el `Store`?
 
@@ -165,3 +166,110 @@ Y en el `html` lo usaríamos así
 <!-- Usamos el pype async para decirle a angular que es una variable que puede modificarse posteriormente por un proceso asíncrono al ser un observable -->
 ```
 
+## ¿ Cómo se modifican los datos del `Store` ?
+
+Para modificar datos del `Store` necesitamos `Actions` que llamen a los `Reducers`, ya que nosotros no tenemos acceso directo al `Reducer`
+
+### Creando nuestra `Action` o Acción
+
+Para crear nuestro `Action` vamos a hacer al igual que hicimos con `Reducer` y crear un nuevo archivo en nuestra carpeta `Store` que defina el `Action` de nuestra variable `counter` y lo llamaremos `counter.actions.ts`, y como nuestra variable es un contador que necesita ser incrementado cuando ocurre algún evento, vamos a definir el método que incrementa dicho `counter`
+
+```typescript
+import { createAction } from '@ngrx/store';
+
+// La función createAction toma un argumento necesario: un identificador único para la acción, que por convención usa el formato '[nombre de la propiedad del Store] Nombre de la acción'.
+export const increment = createAction(
+  '[Counter] Increment'
+)
+```
+
+Entonces, nuestro `Reducer` o Reductor 'escuchará' el `Action` o Acción  para modificar el dato del `Store` o Almacén. Y escuchará usando el método `on()` que importamos de `@ngrx/store`, que definimos como argumento dentro de la función `createReducer` y que toma como primer argumento nuestra acción y como segundo argumento el `callback` que va a ejecutar cuando reciba el evento de la acción y este `callback` a su vez toma como argumento el estado actual y devuelve el nuevo estado. 
+
+
+```typescript
+import { createReducer, on } from '@ngrx/store';
+
+import { increment } from './counter.actions';
+
+const initialState = 0;
+
+export const counterReducer = createReducer(
+  initialState,
+  on(increment, (state) => state + 1)
+);
+```
+
+### Llamando a nuestra `Action` o Acción
+
+¿Desde dónde vamos a llamar a nuestra Acción? Si recordamos el esquema, el Componente interactúa con la Acción y esta lo hace con el Reductor:
+
+![[NgRx selector.png]]
+
+En nuestro componente inyectaremos el Almacén y nuestro objeto Almacén tiene disponible el método `dispatch()` que nos permite "despachar" la Acción, que es la manera en la que expresamos la orden de ejecutar dicha Acción
+
+El método `dispatch()` tomará como argumento el nombre de nuestra Acción importada que se ejecutará como de un método se tratara, y esto hará que el `callback` que tiene definida nuestra Acción se ejecute.
+
+```typescript
+import { Component } from '@angular/core';
+import { Store } from '@ngrx/store'; 
+
+import { increment } from './store/counter.actions';
+
+@Component({
+  selector: 'app-counter-control',
+  templateUrl: './counter-control.component.html',
+  styleUrls: ['./counter-control.component.css'],
+  standalone: true,
+})
+export class CounterControlComponent {
+  constructor(private store: Store){}
+
+  increment(){
+    this.store.dispatch(increment());
+  }
+}
+
+```
+
+Pero nuestra Acción no siempre se va a simplemente ejecutar. Es bastante común que desde el Componente le pasemos datos a nuestra Acción para que trabaje con ellos y a partir de esos datos actualice nuestra propiedad del Almacén.
+
+Conseguimos agregar a nuestra Acción la capacidad de pasar datos al ser despachada usando el método `props` de `@ngrx/store`, definiendo el tipo de datos que va a portar y ejecutando dicho método como segundo argumento de nuestro método `createAction`
+
+```typescript
+import { createAction, props } from '@ngrx/store';
+
+// La función createAction toma un argumento necesario: un identificador único para la acción, que por convención usa el formato '[nombre de la propiedad del Store] Nombre de la acción'.
+export const increment = createAction(
+  '[Counter] Increment',
+  props<{value: number}>()
+)
+```
+
+Modificamos el Reductor para usar como segundo argumento la acción
+
+```typescript
+import { createReducer, on } from '@ngrx/store';
+
+import { increment } from './counter.actions';
+
+const initialState = 0;
+
+export const counterReducer = createReducer(
+  initialState,
+  on(increment, (state, action) => state + action.value)
+);
+```
+
+Y en nuestro componente, para pasarle el dato usamos un objeto con la estructura de datos que definimos y el valor que queremos pasarle
+
+```typescript
+...
+export class CounterControlComponent {
+  constructor(private store: Store){}
+
+  increment(){
+    this.store.dispatch(increment({value: 2}));
+  }
+}
+
+```
