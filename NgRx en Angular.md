@@ -273,3 +273,50 @@ export class CounterControlComponent {
 }
 
 ```
+
+## Selectores ¿Qué son?
+
+Ya hemos visto que para presentar los datos guardados en el almacén podemos usar el método `store.select('nombreDeVariableAlmacenada')` inyectando el `store` en el componente:
+
+```typescript
+import { Store } from '@ngrx/store';
+
+@Component({
+//...
+})
+export class EjemploComponent {
+  contador$: Observable<number> = ;
+  
+  constructor(private store: Store<{contador: number}>){
+    this.contador$ = store.select('contador');
+  }
+}
+
+```
+
+Pues bien, hay una forma adicional de obtener valores: Selectores.
+
+Un selector es una función que obtiene el valor estado que obtiene todos los estados del almacén y devuelve el valor del almacén que nos interesa para ese selector
+
+```typescript
+export const selectorContador = (state: {contador: number}) => state.contador;
+```
+
+Si guardamos dicha función en un archivo independiente .ts y lo importamos a nuestro componente ahora podríamos usar el componente de una forma similar al anterior `store.select()`:
+
+
+```typescript
+import { Store } from '@ngrx/store';
+import { selectContador } from './store/contador.selectors'
+
+@Component({
+//...
+})
+export class EjemploComponent {
+  contador$: Observable<number> = ;
+  
+  constructor(private store: Store<{contador: number}>){
+    this.contador$ = store.select(selectContador);
+  }
+}
+```
