@@ -320,3 +320,54 @@ export class EjemploComponent {
   }
 }
 ```
+
+
+De esta forma podemos reutilizar el selector cada vez que un componente distinto desee usar el selector, sin necesidad de tener que redefinir la función de selector cada vez que queremos solicitar el dato de nuestro almacén, o tener diferentes funciones que llamen al dato del almacén y realicen alguna operación sobre ese dato, teniendo todas estas funciones que interactúan sobre el mismo dato centralizadas en el mismo archivo.
+
+Incluso, yendo un poco más allá, podemos crear nuevos métodos selectores a partir de otros métodos o combinaciones de ellos usando `createSelector()` de `@ngrx/store`
+
+```typescript
+import createSelector from '@ngrx/store';
+
+export const selectCount = (state: {counter : number}) => state.counter;
+
+// Usa el selector selectCount, y a su resultado lo multiplica por dos.
+export const selectDoubleCount = createSelector(
+  selectCount,
+  (state) => state * 2
+);
+
+```
+
+y en un componente que llame a los dos selectores nos quedaría así:
+
+```typescript
+import { Store} from '@ngrx/store';
+
+import { selectCount, selectDoubleCount } from '../store/counter.selectors';
+
+ @Component({
+   selector: 'app-counter-output',
+   templateUrl: './counter-output.component.html',
+   styleUrls: ['./counter-output.component.css'],
+ })
+ export class CounterOutputComponent {
+   count$: Observable<number>;
+   doubleCount$: Observable<number>;
+
+   contructor(private store: Store<{counter: number}>){
+     this.count$ = store.select(selectCount);
+     this.doubleCount$ = store.select(selectDoubleCount);
+   }
+ }
+```
+
+Y en su `html`
+
+```html
+<p class="counter">{{ count$ | async }}</p>
+<p class="counter">Double: {{ doubleCount$ | async }}</p>
+```
+
+## `Effects` o Efectos
+
