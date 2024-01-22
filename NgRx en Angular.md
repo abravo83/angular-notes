@@ -371,3 +371,203 @@ Y en su `html`
 
 ## `Effects` o Efectos
 
+Los efectos colaterales son, en el contexto de Angular, cualquier cosa que cambia y que no está directamente relacionada con un cambio en la IU.
+
+Nuestras funciones reductoras NO deben contener efectos colaterales. Deben de ser totalmente síncronas, por lo que no deben de contener peticiones http ni hacer `console.log()`. Deben ceñirse sólo a la función de generar nuevos estados del dato del almacén.
+
+Pero, como a veces necesitamos poder realizar tales acciones,  para esto usamos los `Effects`
+
+### Instalando `Effects`
+
+En nuestra consola debemos usar el siguiente comando:
+
+```bash
+ng add @ngrx/effects
+```
+
+Esto no sólo va a instalar el paquete, sino que modificará `AppModule` ( o `main.ts` si tenemos componentes `standalone` ) para incluir en el array de importaciones en el primer caso:
+
+```typescript
+imports: [
+  //...,
+  EffectsModule.forRoot([]),
+],
+```
+
+o en el segundo caso, incluir `provide effects` en el array de `providers`:
+
+```typescript
+providers: [..., provideEffects()],
+```
+
+ambos importados de `ngrx/effects`
+
+### Definiendo un `Effect`
+
+Vamos a crear un nuevo archivo en nuestra carpeta `store` al que vamos a llamar `counter.effects.ts`.
+
+En este archivo vamos a crear una nueva clase que vamos a llamar `CounterEffects`, con el decorador @Injectable(),  que va a contener varias propiedades para cada efecto que queramos ejecutar
+
+```typescript
+import { @Injectable } from '@angular/core';
+import { createEffect, Actions } from '@ngrx/effects';
+import { tap } from 'rxjs';
+
+import { increment } from './counter.actions';
+
+@Injectable()
+export class CounterEffects {
+
+  //action$.pipe hace que tengamos acceso a un "disparador" que se activa cada vez que se realiza un Action.
+  saveCount = createEffect( 
+      () => this.actions$.pipe(
+        //El método ofType nos permite delimitar que tipo de acción hace que se "dispare" el efecto
+        ofType(increment),
+        tap((action)=>{
+          console.log(action);
+          localStorage.setItem('count', action.value.toString());
+        }
+      )
+    ),
+    // Tras el callback lleva un objeto de configuración que no se van a despachar nuevas acciones.
+    // El valor por defecto es true.
+    { dispatch: false };
+  )
+
+
+  constructor(private action$: Actions) {}
+}
+```
+
+Por último, debemos decirle a Angular que hemos creado un nuevo efecto, que de momento está en un archivo aislado, y eso lo hacemos dentro de las propiedades que modificó `ng add @ngrx/effect
+
+Bien en `AppModule`:
+
+```typescript
+import { CounterEffects } from './store/counter.effect'
+
+//...
+imports: [
+  //...,
+  EffectsModule.forRoot([CounterEffects]),
+],
+
+```
+
+o bien en `main.ts`:
+
+```typescript
+import { provideEffects } from '@ngrx/effects';
+
+import { CounterEffects } from './store/counter.effect'
+
+//...
+providers: [..., provideEffects([CounterEffects])],
+```
+
+### Usando datos del almacén de Efectos
+
+En el anterior apartado no hemos usado el dato que actualmente figuraba en el almacén para `counter`, sino la cantidad por la que se modifica dicho dato en el almacén, es decir, la cantidad del `action` (`action.value`).
+
+Si queremos usar realmente la cantidad del almacén, para poder hacer uso de esa cantidad, tenemos disponible el método: `withLatestFrom` de `rxjs`. Este nos permite obtener un valor que posteriormente estará disponible en el siguiente operador del `pipe` de `actions$`.
+
+Inyectamos nuestro almacén a través del constructor, y entonces podemos acceder al `Select` con el método:
+
+```typescript
+withLatestFrom(this.store.select(selectCount)),
+tap(...
+```
+
+y ahora como argumento de `tap` vamos a recibir un arau, donde el primer elemento es nuestro action, y el segundo elemento será el retorno de `withLatestFrom`
+
+```typescript
+withLatestFrom(this.store.select(selectCount)),
+tap(([action, counter])=>{
+  console.log(action);
+  localStorage.setItem('count', counter.toString());
+})
+```
+
+### Añadiendo un segundo `Effect`
+
+Vamos a crear un segundo efecto, pero en esta ocasión, nuestro efecto si va a despachar una nueva acción: vamos a recuperar el dato almacenado en `local storage` y vamos a realizar una acción con el: guardarlo en el almacén de `NgRx`.
+
+Así, cuando recarguemos la aplicación podemos recuperar el último valor del contador.
+
+Para esto vamos a añadir dos nuevas acciones a nuestro '`counter.actions.ts`':
+1. `init`: va a "disparar" el efecto que va a conseguir el dato que hemos almacenado en el `local storage` y no lleva valor aparejado a la acción.
+2. `set`: Usa ese valor recuperado y lo fija en nuestro almacén.
+
+```typescript
+//counter.actions.ts
+export const init = createAction('[ Counter ] init');
+export const set = createAction(
+  '[ Counter ] set',
+  props<{value: number}>(),
+  )
+```
+
+Ahora, en el `Reducer` añadiremos un nuevo disparador para nuestra acción `set` que lo único que va a realizar es devolver el valor del `action`:
+
+```typescript
+//counter.reducer.ts
+import { decrement, increment, set } from './counter.action.ts';
+
+const initialState = 0;
+
+export const counterReducer = createReducer(
+  initialState,
+  on(increment, (state, action)=> state + action.value),
+  on(decrement, (state, action)=> state - action.value),
+  on(set, (state, action)=> action.value),
+);
+
+```
+
+Ahora debemos de agregar la lógica para nuestro archivo de efectos:
+
+```typescript
+//counter.effects.ts
+
+//...
+@Inyectable()
+export class CounterEffects {
+  loadCount = createEffect(()=>this.action$.pipe(
+    ofType(init),
+    switchMap(()=>{
+      const storedCounter = localStorage.getItem('count');
+      if (storedCounter){
+        //of() se importa de rxjs y sirve para convertir en objervable un retorno.
+        return of(set({value: +storedCounter}))
+      }
+
+      return set({value: 0});
+
+    })
+  ))
+}
+```
+
+Ya solo nos queda despachar la acción `init`, que va a recoger el dato guardado en el `local storage` y devolverlo usando la acción `set`. Esta acción `init` va a ser despachada en el ciclo `onInit` del componente principal `AppComponent`, aunque la situación en la que vamos a despachar esta acción depende de cada caso, y la podríamos llamar desde cualquier componente donde tenga sentido colocarlo:
+
+```typescript
+//app.component.ts
+import { Component, onInit } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { init } from './store/counter.action';
+
+@Component({
+  selector: 'app-coponent',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
+})
+export class AppComponent implements OnInit {
+
+  constructor (private store: Store){}
+
+  ngOnInit(): void {
+    this.store.dispatch(init());
+  }
+}
+
+```
