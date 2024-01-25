@@ -41,6 +41,8 @@ export class AppModule { }
 
 ## Configurando `Animations`:  importación directa de la funciones de `Animations` al componente
 
+Esta parte es común tanto para componentes `standalone` como componentes para `NgModules`. Para poder usar las animaciones de Angular debemos importar al componente los métodos con los que vamos a definir los metadatos del decorador para configurar nuestra animación.
+
 ```typescript
 import { Component, HostBinding } from '@angular/core';
 import {
@@ -56,6 +58,7 @@ import {
 
 ## Uso de `Animations` en el componente
 
+Una vez tenemos todo configurado para poder usar las animaciones, debemos configurar cada una de nuestras animaciones en el propio componente.
 
 Las animaciones en Angular se configurar en el decorador `@Component`, donde vamos a agregar una propiedad llamada `animations` que va a contener un array. En este array primero vamos a colocar el método `trigger()` que va a contener dos argumentos, un `identificador` que vamos a colocar en el elemento HTML que queremos animar con esta animación, y un array que a su vez va a contener *estados* y *transiciones*.
 
@@ -69,7 +72,6 @@ Luego hay elementos que definirán la duración de las diferentes transiciones e
   selector: 'app-open-close',
   animations: [
     trigger('openClose', [
-      // ...
       state('open', style({
         height: '200px',
         opacity: 1,
@@ -102,9 +104,41 @@ export class OpenCloseComponent {
 }
 ```
 
-```typescript
-@Component({
-  selector: 'app-example',
-  
-})
+Luego en la plantilla podemos definir el estado de un componente basándonos en algún condicional. En el ejemplo evaluamos si la variable  `isOpen` es verdadera o falsa
+
+```html
+<div [@openClose]="isOpen ? 'open' : 'close' ">
+  <p>La caja está {{isOpen ? 'abierta' : 'cerrada'}}</p>
+</div>
 ```
+
+### Uso de `Alias` en el componente.
+
+Tenemos disponible el uso de algunos alias a usar en vez de los cambios de estado que nos permiten definir animaciones a aplicar cuando un `@if `o `*ngIf` activan un elemento. No definen estados, sino directamente las transiciones, donde la transición para `:enter` acepta como primer elemento del array un método `style({cssProp: cssValue})` que define el estilo inicial desde la que parte la primera animación de entrada.
+
+```typescript
+@COmponent({
+  selector: 'app-mi-ejemplo',
+  templateUrl: './mi-ejemplo.component.html',
+  styleUrls: ['./mi-ejemplo.component.css'],
+  animations: [
+    trigger('apareceDesaparece', [
+      transition(':enter', [
+        style({height: '0px', opacity: 0}),
+        animate('0.5s', style({height: '200px', opacity: 1 }))
+      ]),
+      transition(':leave'), [
+      animate('0.5s', style({height: '0px', opacity: 0}))
+      ]
+    ])
+  ]
+})
+export class MiEjemplo {
+  isOpen = false;
+  toggle(){
+    this.isOpen = !this.isOpen;
+  }
+
+}
+```
+
