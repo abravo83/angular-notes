@@ -39,7 +39,7 @@ export class AppModule { }
 ```
 
 
-## Configurando `Animations`:  importación directa de la funciones de `Animations` al componente
+## Configurando `Animations` en el componente:  importación de las funciones de `Animations`
 
 Esta parte es común tanto para componentes `standalone` como componentes para `NgModules`. Para poder usar las animaciones de Angular debemos importar al componente los métodos con los que vamos a definir los metadatos del decorador para configurar nuestra animación.
 
@@ -112,6 +112,14 @@ Luego en la plantilla podemos definir el estado de un componente basándonos en 
 </div>
 ```
 
+Otra manera en que podemos usarla es colocando directamente alguna variable que contenga el valor del estado. Por ejemplo, puede comenzar en estado `state='normal'` como valor inicial y luego pasarlo a `state='open'` para después pasarlo a `state='close'` en nuestro componente.
+
+```html
+<div [@openClose]="state">
+  <p>La caja está {{isOpen ? 'abierta' : 'cerrada'}}</p>
+</div>
+```
+
 ### Uso de `Alias` en el componente.
 
 Tenemos disponible el uso de algunos alias a usar en vez de los cambios de estado que nos permiten definir animaciones a aplicar cuando un `@if `o `*ngIf` activan un elemento. No definen estados, sino directamente las transiciones, donde la transición para `:enter` acepta como primer elemento del array un método `style({cssProp: cssValue})` que define el estilo inicial desde la que parte la primera animación de entrada.
@@ -140,5 +148,56 @@ export class MiEjemplo {
   }
 
 }
+```
+
+```html
+@if(isOpen){
+<!-- No lleva binding al estado porque usa alias -->
+<div @apareceDesaparece>
+  <p>La caja está {{isOpen ? 'abierta' : 'cerrada'}}</p>
+</div>
+}
+```
+
+
+Otro alias que tenemos es `void` que identifica el estado de un elemento cuando no está presente en el DOM, por lo que hace algo similar a `:enter`, pero podemos definir la animación no para toda aparición del elemento, sino específicamente para cuando aparece hacia un estado o hacia otro:
+
+```typescript
+@Component({
+  selector: 'app-example',
+  templateUrl: './example.component.html',
+  styleUrls: ['./example.component.css'],
+  animations: [
+  trigger('aparece', [
+    state('normal', style({backgroundColor: 'green'})),
+    state('yello', style({backgroundColor: 'yellow'})),
+    transition('void => normal', animate(300)),
+    transition('void => yello', animate(600)),  // La duración es diferente
+  ],
+})
+```
+
+## Transiciones
+
+Ya hemos visto un poco cómo funciona el método `transitions` en el que primero indicábamos la dirección de la transición a la que queremos aplicar la animación y la duración de dicha animación:
+
+```typescript
+transition('open => closed', animate('1s'))
+```
+
+Pero hay más opciones. Podemos definir ambas direcciones para una transición:
+
+```typescript
+transition('open <=> closed', animate('1s'))
+```
+
+O podemos hacer una animación en varias fases usando un array como segundo argumento:
+
+```typescript
+transition('open <=> closed', [
+  style({'background-color' : 'orange' }), //Primera fase: cambio brusco de color de fondo.
+  animate(500, style({backgroundColor : 'green')}), //Segunda fase: cambio suave a verde
+  animate(500, style({transform : 'scale(0.5)')), //Tercera fase: reducimos tamaño a la mitad.
+  ])
 ```
 
