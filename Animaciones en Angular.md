@@ -201,3 +201,54 @@ transition('open <=> closed', [
   ])
 ```
 
+### Añadiendo `keyframes` a nuestras transiciones.
+
+Podemos tener aún un control más detallado de nuestra animaciones mediante el uso de `keyframes` dentro del método `animate` de nuestra `transition`.
+
+Definimos `keyframes` mediante el método  `keyframes()`, que importamos de `@angular/core`, dentro de `transition()`. Este método `keyframes` va a aceptar como argumento un array de `style()` donde si definimos la propiedad  `offset: 0.3` fijamos la parte porcentual en la que empieza cada `keyframe` en tanto por uno:
+
+```typescript
+transition('void => *', [
+  animate(1000, keyframes([
+      style({
+        opacity: 0,
+        offset: 0
+      }),
+      style({
+        opacity: 0.5,
+        offset: 0.3
+      }),
+      style({
+        opacity: 1,
+        offset: 0.9
+      })
+    ])
+  )
+])
+```
+
+### Aplicando dos animaciones al mismo tiempo. (Agrupación de animaciones).
+
+Hasta ahora, el método `animate()` dentro de un `transition()` se aplica de arriba a abajo uno detrás de otro. Pero, ¿Y si queremos aplicar dos animaciones que comienzan en el mismo momento aunque tengan diferentes duraciones?
+
+Para esto tenemos disponible el método `group()`, que importamos de `@angular/core` que nos permite hacer exactamente esto:
+
+```typescript
+transition('void => *', [
+  group([
+    animate(300, 
+      style({
+        opacity: 0
+      })
+    ),
+    animate(400, 
+      style({
+        backgroundColor: 'red'
+      })
+    )
+  ])
+])
+```
+
+
+### Usando `callbacks` de animaciones
