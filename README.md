@@ -21,9 +21,11 @@ El orden correcto de estudio de los temas es:
 15. Componentes `Standalone` en Angular
 16. `Signals` en Angular
 17. `NgRx` en Angular
+18. Animaciones en Angular
 
 
 //TODO:
-18. Angular Universal (SSR)
+19. 
 19. `Unit testing` en Angular
-20. ...
+20. Angular Universal (SSR)
+21. ...

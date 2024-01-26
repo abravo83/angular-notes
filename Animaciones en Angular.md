@@ -252,3 +252,17 @@ transition('void => *', [
 
 
 ### Usando `callbacks` de animaciones
+
+La utilidad de estas es poder ejecutar algún código para cuando terminemos una animación, aunque también podemos hacerlo justo en el momento de comenzar la animación.
+
+Para poder hacer esto tenemos disponibles dos eventos relacionados con el `trigger` que fijamos en el elemento HTML: `@trigger.start` y `@trigger.donde` que se pueden enlazar con algún método propio del componente que se ejecutará cuando se emitan estos eventos. Un ejemplo del HTML sería:
+
+```html
+<div
+  [@divState]="state"
+  (@divState.start)="animationStarted($event)"  //No es necesario usar el evento como argumento.
+  (@divState.donde)="animationEnded($event)"
+  >
+</div>
+```
+
